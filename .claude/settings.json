@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx jest:*)",
+      "Bash(node -e \"const {defaults} = require\\(''jest-config''\\); console.log\\(Object.keys\\(defaults\\).filter\\(k => k.toLowerCase\\(\\).includes\\(''setup''\\)\\)\\)\")",
+      "Bash(npx next:*)"
+    ]
+  }
+}

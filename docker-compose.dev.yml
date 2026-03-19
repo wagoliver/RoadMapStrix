@@ -1,0 +1,23 @@
+# Apenas o banco para desenvolvimento local (sem containerizar o Next.js)
+# Uso: docker compose -f docker-compose.dev.yml up -d
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: roadmapstrix_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-roadmap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roadmap}
+      POSTGRES_DB: ${POSTGRES_DB:-roadmapstrix}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-roadmap} -d ${POSTGRES_DB:-roadmapstrix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_dev_data:

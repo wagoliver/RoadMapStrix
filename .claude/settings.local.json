@@ -6,7 +6,12 @@
       "Bash(mv roadmapstrix/.* .)",
       "Bash(rmdir roadmapstrix:*)",
       "Bash(npm install:*)",
-      "Bash(npx shadcn@latest init --defaults --yes)"
+      "Bash(npx shadcn@latest init --defaults --yes)",
+      "Bash(npx shadcn@latest add button dialog input label select textarea badge dropdown-menu context-menu popover calendar tooltip separator card --yes)",
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "Bash(find '/c/Users/wagneroliveira/OneDrive - ARCTICA SERVIÇOS TM TECNOLOGIA DA INFORMAÇÃO LTDA/RoadMapStrix/node_modules' -name tailwind.css -path */shadcn/*)"
     ]
   }
 }
