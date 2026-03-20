@@ -1,127 +1,15 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import type { Activity, Project, CreateActivityInput } from '@/types'
 import { useRoadmapStore } from '@/store/roadmapStore'
 import { CreateActivityDialog } from '@/components/roadmap/ActivitySidebar/CreateActivityDialog'
 import { PlanningCard } from './PlanningCard'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronLeft, ChevronRight, Plus, Maximize2, Minimize2, Search, X, SlidersHorizontal, Check } from 'lucide-react'
-import { TEAM_COLORS, AREA_COLORS } from './EditActivityDialog'
-
-// ── Filter option types ──────────────────────────────────────────────────────
-
-interface FilterOption { key: string; label?: string; color?: string }
-
-function FilterDropdown({
-  label,
-  options,
-  selected,
-  onToggle,
-  onClear,
-}: {
-  label: string
-  options: FilterOption[]
-  selected: Set<string>
-  onToggle: (key: string) => void
-  onClear: () => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const count = options.filter((o) => selected.has(o.key)).length
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors whitespace-nowrap ${
-          count > 0
-            ? 'border-primary/50 text-primary bg-primary/5'
-            : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/40'
-        }`}
-      >
-        {label}
-        {count > 0 && (
-          <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
-            {count}
-          </span>
-        )}
-        <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 min-w-44 bg-popover border border-border rounded-lg shadow-lg py-1">
-          {options.map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => onToggle(opt.key)}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent transition-colors text-left"
-            >
-              <div className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-                selected.has(opt.key) ? 'bg-primary border-primary' : 'border-border'
-              }`}>
-                {selected.has(opt.key) && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-              </div>
-              {opt.color && (
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.color }} />
-              )}
-              <span className={selected.has(opt.key) ? 'text-foreground font-medium' : 'text-muted-foreground'}>
-                {opt.label ?? opt.key}
-              </span>
-            </button>
-          ))}
-          {count > 0 && (
-            <div className="border-t border-border mt-1 pt-1 px-2">
-              <button
-                onClick={() => { onClear(); setOpen(false) }}
-                className="w-full text-left text-[11px] text-muted-foreground hover:text-foreground px-1 py-1 transition-colors"
-              >
-                Limpar
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Option definitions ───────────────────────────────────────────────────────
-
-const STATUS_OPTIONS: FilterOption[] = [
-  { key: 'Backlog',      color: '#8b8fa3' },
-  { key: 'Planejado',    color: '#06b6d4' },
-  { key: 'Em Andamento', color: '#818cf8' },
-  { key: 'Em Review',    color: '#eab308' },
-  { key: 'Em Produção',  color: '#16a34a' },
-  { key: 'Concluído',    color: '#4ade80' },
-]
-
-const AREA_OPTIONS: FilterOption[] = Object.entries(AREA_COLORS).map(([key, color]) => ({ key, color }))
-
-const TEAM_OPTIONS: FilterOption[] = Object.entries(TEAM_COLORS).map(([key, color]) => ({ key, color }))
-
-const SIZE_OPTIONS: FilterOption[] = [
-  { key: 'S',  color: '#22c55e' },
-  { key: 'M',  color: '#eab308' },
-  { key: 'L',  color: '#f97316' },
-  { key: 'XL', color: '#ef4444' },
-]
-
-const ORIGIN_OPTIONS: FilterOption[] = [
-  { key: 'interno', label: 'Interno', color: '#6366f1' },
-  { key: 'cliente', label: 'Cliente', color: '#eab308' },
-]
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, Maximize2, Minimize2, Search, X, SlidersHorizontal } from 'lucide-react'
+import { FilterDropdown } from '@/components/ui/FilterDropdown'
+import { useActivityFilters, STATUS_OPTIONS, AREA_OPTIONS, TEAM_OPTIONS, SIZE_OPTIONS, ORIGIN_OPTIONS } from '@/hooks/useActivityFilters'
 import { quarterToStartDate } from '@/lib/gantt/positionUtils'
 
 const QUARTERS = [
@@ -144,61 +32,22 @@ export function PlanningView({ project }: PlanningViewProps) {
   const [wishlistCollapsed, setWishlistCollapsed] = useState(false)
 
   // ── Filters (main area only) ──
-  const [filterOpen, setFilterOpen] = useState(false)
-  const [filterSearch, setFilterSearch] = useState('')
-  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(new Set())
-  const [selectedAreas, setSelectedAreas] = useState<Set<string>>(new Set())
-  const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set())
-  const [selectedSizes, setSelectedSizes] = useState<Set<string>>(new Set())
-  const [selectedOrigins, setSelectedOrigins] = useState<Set<string>>(new Set())
-  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
-
-  const toggleSet = (set: Set<string>, value: string): Set<string> => {
-    const next = new Set(Array.from(set))
-    if (next.has(value)) { next.delete(value) } else { next.add(value) }
-    return next
-  }
-
-  const activeFilterCount =
-    (filterSearch ? 1 : 0) +
-    selectedStatuses.size + selectedAreas.size + selectedTeams.size +
-    selectedSizes.size + selectedOrigins.size + selectedClients.size
-
-  const clearFilters = () => {
-    setFilterSearch('')
-    setSelectedStatuses(new Set())
-    setSelectedAreas(new Set())
-    setSelectedTeams(new Set())
-    setSelectedSizes(new Set())
-    setSelectedOrigins(new Set())
-    setSelectedClients(new Set())
-  }
-
-  const clientOptions = useMemo<FilterOption[]>(() => {
-    const s = new Set<string>()
-    activities.forEach((a) => a.clients?.forEach((c) => s.add(c)))
-    return Array.from(s).sort().map((c) => ({ key: c }))
-  }, [activities])
-
-  const applyFilters = (list: Activity[]) => {
-    return list.filter((a) => {
-      if (filterSearch) {
-        const q = filterSearch.toLowerCase()
-        if (
-          !a.name.toLowerCase().includes(q) &&
-          !(a.description ?? '').toLowerCase().includes(q) &&
-          !(a.jiraRef ?? '').toLowerCase().includes(q)
-        ) return false
-      }
-      if (selectedStatuses.size > 0 && !selectedStatuses.has(a.planStatus ?? '')) return false
-      if (selectedAreas.size > 0 && !selectedAreas.has(a.area ?? '')) return false
-      if (selectedTeams.size > 0 && !selectedTeams.has(a.team ?? '')) return false
-      if (selectedSizes.size > 0 && !selectedSizes.has(a.sizeLabel ?? '')) return false
-      if (selectedOrigins.size > 0 && !selectedOrigins.has(a.origin ?? '')) return false
-      if (selectedClients.size > 0 && !a.clients?.some((c) => selectedClients.has(c))) return false
-      return true
-    })
-  }
+  const {
+    filterOpen, setFilterOpen,
+    filterSearch, setFilterSearch,
+    selectedStatuses, setSelectedStatuses,
+    selectedAreas,    setSelectedAreas,
+    selectedTeams,    setSelectedTeams,
+    selectedSizes,    setSelectedSizes,
+    selectedOrigins,  setSelectedOrigins,
+    selectedClients,  setSelectedClients,
+    clearSelectedStatuses, clearSelectedAreas, clearSelectedTeams,
+    clearSelectedSizes, clearSelectedOrigins, clearSelectedClients,
+    activeFilterCount,
+    clearFilters,
+    clientOptions,
+    applyFilters,
+  } = useActivityFilters(activities)
 
   const toggleCollapse = (key: string) => {
     setCollapsed((prev) => {
@@ -498,44 +347,44 @@ export function PlanningView({ project }: PlanningViewProps) {
                 label="Status"
                 options={STATUS_OPTIONS}
                 selected={selectedStatuses}
-                onToggle={(k) => setSelectedStatuses((p) => toggleSet(p, k))}
-                onClear={() => setSelectedStatuses(new Set())}
+                onToggle={setSelectedStatuses}
+                onClear={clearSelectedStatuses}
               />
               <FilterDropdown
                 label="Área"
                 options={AREA_OPTIONS}
                 selected={selectedAreas}
-                onToggle={(k) => setSelectedAreas((p) => toggleSet(p, k))}
-                onClear={() => setSelectedAreas(new Set())}
+                onToggle={setSelectedAreas}
+                onClear={clearSelectedAreas}
               />
               <FilterDropdown
                 label="Time"
                 options={TEAM_OPTIONS}
                 selected={selectedTeams}
-                onToggle={(k) => setSelectedTeams((p) => toggleSet(p, k))}
-                onClear={() => setSelectedTeams(new Set())}
+                onToggle={setSelectedTeams}
+                onClear={clearSelectedTeams}
               />
               <FilterDropdown
                 label="Tamanho"
                 options={SIZE_OPTIONS}
                 selected={selectedSizes}
-                onToggle={(k) => setSelectedSizes((p) => toggleSet(p, k))}
-                onClear={() => setSelectedSizes(new Set())}
+                onToggle={setSelectedSizes}
+                onClear={clearSelectedSizes}
               />
               <FilterDropdown
                 label="Origem"
                 options={ORIGIN_OPTIONS}
                 selected={selectedOrigins}
-                onToggle={(k) => setSelectedOrigins((p) => toggleSet(p, k))}
-                onClear={() => setSelectedOrigins(new Set())}
+                onToggle={setSelectedOrigins}
+                onClear={clearSelectedOrigins}
               />
               {clientOptions.length > 0 && (
                 <FilterDropdown
                   label="Cliente"
                   options={clientOptions}
                   selected={selectedClients}
-                  onToggle={(k) => setSelectedClients((p) => toggleSet(p, k))}
-                  onClear={() => setSelectedClients(new Set())}
+                  onToggle={setSelectedClients}
+                  onClear={clearSelectedClients}
                 />
               )}
             </div>

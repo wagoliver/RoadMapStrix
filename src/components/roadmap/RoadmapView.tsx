@@ -25,6 +25,9 @@ import { getChartStartDate } from '@/lib/gantt/timeEngine'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import type { DragData } from '@/hooks/useDragActivity'
+import { FilterDropdown } from '@/components/ui/FilterDropdown'
+import { useActivityFilters, STATUS_OPTIONS, AREA_OPTIONS, TEAM_OPTIONS, SIZE_OPTIONS, ORIGIN_OPTIONS } from '@/hooks/useActivityFilters'
+import { SlidersHorizontal, Search, X } from 'lucide-react'
 
 interface RoadmapViewProps {
   project: Project
@@ -250,11 +253,13 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
   const handleEditActivitySubmit = async (input: EditActivityValues) => {
     if (!editActivity) return
     try {
+      const quarter = input.quarter || null
       await api.activities.update(project.id, editActivity.id, {
         name: input.name,
         description: input.description,
         color: input.color,
         durationSprints: input.durationSprints,
+        quarter,
         area: input.area || null,
         planStatus: input.planStatus,
         team: input.team || null,
@@ -269,6 +274,7 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
         description: input.description,
         color: input.color,
         durationSprints: input.durationSprints,
+        quarter,
         area: input.area || null,
         planStatus: input.planStatus,
         team: input.team || null,
@@ -359,13 +365,31 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     }
   }
 
+  const {
+    filterOpen, setFilterOpen,
+    filterSearch, setFilterSearch,
+    selectedStatuses, setSelectedStatuses,
+    selectedAreas,    setSelectedAreas,
+    selectedTeams,    setSelectedTeams,
+    selectedSizes,    setSelectedSizes,
+    selectedOrigins,  setSelectedOrigins,
+    selectedClients,  setSelectedClients,
+    clearSelectedStatuses, clearSelectedAreas, clearSelectedTeams,
+    clearSelectedSizes, clearSelectedOrigins, clearSelectedClients,
+    activeFilterCount,
+    clearFilters,
+    clientOptions,
+    applyFilters,
+  } = useActivityFilters(activities)
+
   const QUARTER_KEYS = ['Q1', 'Q2', 'Q3', 'Q4']
   const ganttActivities = activities.filter(
     (a) => a.quarter && QUARTER_KEYS.includes(a.quarter)
   )
   const wishlistActivities = activities.filter((a) => a.quarter === 'wishlist')
-  const allActivitiesFiltered = getFilteredActivities()
-  const scheduledFiltered = allActivitiesFiltered.filter((a) => a.startDate != null)
+  const scheduledFiltered = applyFilters(
+    getFilteredActivities().filter((a) => a.startDate != null)
+  )
 
 
   const activeDragActivity = activeDragData
@@ -383,7 +407,47 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
           onExport={handleExport}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
+          filterOpen={filterOpen}
+          activeFilterCount={activeFilterCount}
+          onToggleFilter={() => setFilterOpen((v) => !v)}
         />
+
+        {/* Filter panel */}
+        {filterOpen && (
+          <div className="border-b border-border bg-card px-4 py-3 flex flex-col gap-3 flex-shrink-0">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                className="w-full bg-background border border-border rounded-lg text-xs pl-8 pr-8 py-1.5 outline-none focus:border-primary/50 placeholder:text-muted-foreground/60 transition-colors"
+                placeholder="Buscar por nome, Jira ID..."
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+              />
+              {filterSearch && (
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setFilterSearch('')}>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <FilterDropdown label="Status"  options={STATUS_OPTIONS}  selected={selectedStatuses} onToggle={setSelectedStatuses} onClear={clearSelectedStatuses} />
+              <FilterDropdown label="Área"    options={AREA_OPTIONS}    selected={selectedAreas}    onToggle={setSelectedAreas}    onClear={clearSelectedAreas} />
+              <FilterDropdown label="Time"    options={TEAM_OPTIONS}    selected={selectedTeams}    onToggle={setSelectedTeams}    onClear={clearSelectedTeams} />
+              <FilterDropdown label="Tamanho" options={SIZE_OPTIONS}    selected={selectedSizes}    onToggle={setSelectedSizes}    onClear={clearSelectedSizes} />
+              <FilterDropdown label="Origem"  options={ORIGIN_OPTIONS}  selected={selectedOrigins}  onToggle={setSelectedOrigins}  onClear={clearSelectedOrigins} />
+              {clientOptions.length > 0 && (
+                <FilterDropdown label="Cliente" options={clientOptions} selected={selectedClients} onToggle={setSelectedClients} onClear={clearSelectedClients} />
+              )}
+            </div>
+            {activeFilterCount > 0 && (
+              <div className="flex justify-end border-t border-border pt-2">
+                <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="w-3 h-3" /> Limpar todos
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-1 overflow-hidden">
           <ActivitySidebar

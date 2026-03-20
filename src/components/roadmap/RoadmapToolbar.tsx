@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Download, RefreshCw } from 'lucide-react'
+import { Calendar, Download, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { TimeView, COLUMN_CONFIG, TIME_VIEWS } from '@/lib/gantt/columnConfig'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +14,9 @@ interface RoadmapToolbarProps {
   onExport?: () => void
   onRefresh?: () => Promise<void>
   isRefreshing?: boolean
+  filterOpen?: boolean
+  activeFilterCount?: number
+  onToggleFilter?: () => void
 }
 
 export function RoadmapToolbar({
@@ -24,6 +27,9 @@ export function RoadmapToolbar({
   onExport,
   onRefresh,
   isRefreshing = false,
+  filterOpen = false,
+  activeFilterCount = 0,
+  onToggleFilter,
 }: RoadmapToolbarProps) {
   return (
     <div className="h-12 border-b bg-background flex items-center px-4 gap-3 flex-shrink-0">
@@ -60,6 +66,24 @@ export function RoadmapToolbar({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Filter toggle */}
+      {onToggleFilter && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onToggleFilter}
+          className={cn('h-7 text-xs gap-1 relative', filterOpen || activeFilterCount > 0 ? 'border-primary/60 text-primary bg-primary/5' : '')}
+        >
+          <SlidersHorizontal className="w-3 h-3" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
+      )}
 
       {/* Refresh */}
       {onRefresh && (
