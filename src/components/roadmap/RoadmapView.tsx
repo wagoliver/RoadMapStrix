@@ -93,16 +93,13 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
         const findFreeRow = (startDate: Date, durationSprints: number, alreadyScheduled: Activity[]): number => {
           const sprintMs = project.sprintDuration * 24 * 60 * 60 * 1000
           const endDate = new Date(startDate.getTime() + durationSprints * sprintMs)
-          const maxRow = alreadyScheduled.reduce((max, a) => Math.max(max, a.rowIndex ?? -1), -1)
-          for (let row = 0; row <= maxRow + 1; row++) {
-            const overlaps = alreadyScheduled.some((a) => {
-              if (a.rowIndex !== row || !a.startDate) return false
-              const aEnd = new Date(a.startDate.getTime() + a.durationSprints * sprintMs)
-              return a.startDate < endDate && startDate < aEnd
-            })
-            if (!overlaps) return row
-          }
-          return maxRow + 1
+          let row = 0
+          while (alreadyScheduled.some((a) => {
+            if (a.rowIndex !== row || !a.startDate) return false
+            const aEnd = new Date(a.startDate.getTime() + a.durationSprints * sprintMs)
+            return a.startDate < endDate && startDate < aEnd
+          })) row++
+          return row
         }
 
         // Build a mutable list of already-scheduled activities (grows as we assign new ones)
@@ -225,10 +222,27 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     const snapped = snapDateToView(newStartDate, timeView)
     const newQuarter = dateToQuarter(snapped)
 
-    scheduleActivity(dragData.activityId, snapped, rowIndex)
+    // Find the first row (starting from target) with no time overlap
+    const draggedActivity = activities.find((a) => a.id === dragData.activityId)
+    const sprintMs = project.sprintDuration * 24 * 60 * 60 * 1000
+    const draggedDuration = (draggedActivity?.durationSprints ?? 1) * sprintMs
+    const draggedEnd = new Date(snapped.getTime() + draggedDuration)
+
+    const isRowOccupied = (row: number) =>
+      activities.some((a) => {
+        if (a.id === dragData.activityId || a.rowIndex !== row || !a.startDate) return false
+        const aEnd = new Date(a.startDate.getTime() + a.durationSprints * sprintMs)
+        return a.startDate < draggedEnd && snapped < aEnd
+      })
+
+    // Find the topmost free row (row 0 first, then 1, 2, ...)
+    let finalRow = 0
+    while (isRowOccupied(finalRow)) finalRow++
+
+    scheduleActivity(dragData.activityId, snapped, finalRow)
     updateActivity(dragData.activityId, { quarter: newQuarter })
 
-    persistSchedule(dragData.activityId, snapped, rowIndex)
+    persistSchedule(dragData.activityId, snapped, finalRow)
     api.activities.update(project.id, dragData.activityId, { quarter: newQuarter }).catch(() => {})
   }
 

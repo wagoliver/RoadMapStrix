@@ -137,8 +137,6 @@ export function GanttChart({
     }
 
     const onWheel = (e: WheelEvent) => {
-      // Ctrl+Wheel = zoom, plain wheel = native scroll (vertical/horizontal)
-      if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
       const direction = e.deltaY > 0 ? 1 : -1
       const rect = el.getBoundingClientRect()
