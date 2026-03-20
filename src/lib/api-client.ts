@@ -68,6 +68,35 @@ export const api = {
       }),
   },
 
+  featureGroups: {
+    list: (projectId: string) =>
+      request<FeatureGroupData[]>(`/api/projects/${projectId}/feature-groups`),
+    create: (projectId: string, data?: Partial<FeatureGroupData>) =>
+      request<FeatureGroupData>(`/api/projects/${projectId}/feature-groups`, {
+        method: 'POST',
+        body: JSON.stringify(data ?? {}),
+      }),
+    update: (projectId: string, groupId: string, data: Partial<FeatureGroupData>) =>
+      request<FeatureGroupData>(`/api/projects/${projectId}/feature-groups/${groupId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    delete: (projectId: string, groupId: string) =>
+      request<{ ok: boolean }>(`/api/projects/${projectId}/feature-groups/${groupId}`, {
+        method: 'DELETE',
+      }),
+    addActivity: (projectId: string, groupId: string, activityId: string) =>
+      request<{ id: string }>(`/api/projects/${projectId}/feature-groups/${groupId}/activities`, {
+        method: 'POST',
+        body: JSON.stringify({ activityId }),
+      }),
+    removeActivity: (projectId: string, groupId: string, activityId: string) =>
+      request<{ ok: boolean }>(`/api/projects/${projectId}/feature-groups/${groupId}/activities`, {
+        method: 'DELETE',
+        body: JSON.stringify({ activityId }),
+      }),
+  },
+
   auth: {
     register: (data: { name: string; email: string; password: string }) =>
       request<{ id: string; name: string; email: string }>('/api/auth/register', {
@@ -196,4 +225,32 @@ export interface UpdateActivityData {
   clients?: string[]
   jiraRef?: string | null
   planningNote?: string | null
+}
+
+export interface FeatureGroupData {
+  id: string
+  projectId: string
+  title: string
+  description: string | null
+  color: string
+  x: number
+  y: number
+  width: number
+  height: number
+  createdAt: string
+  updatedAt: string
+  activities: {
+    id: string
+    activity: {
+      id: string
+      name: string
+      jiraRef: string | null
+      quarter: string | null
+      planStatus: string
+      area: string | null
+      sizeLabel: string | null
+      durationSprints: number
+      color: string
+    }
+  }[]
 }

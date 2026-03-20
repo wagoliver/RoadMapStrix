@@ -29,7 +29,12 @@
       "Bash(node -e \":*)",
       "Bash(python3:*)",
       "Bash(node -r ts-node/register -e \":*)",
-      "Bash(PGPASSWORD=roadmap psql -h localhost -U roadmap -d roadmapstrix -c \"SELECT a.name FROM \"\"Activity\"\" a JOIN \"\"Project\"\" p ON a.\"\"projectId\"\" = p.id ORDER BY p.name, a.name;\")"
+      "Bash(PGPASSWORD=roadmap psql -h localhost -U roadmap -d roadmapstrix -c \"SELECT a.name FROM \"\"Activity\"\" a JOIN \"\"Project\"\" p ON a.\"\"projectId\"\" = p.id ORDER BY p.name, a.name;\")",
+      "Bash(DATABASE_URL=\"postgresql://roadmap:roadmap@localhost:5432/roadmapstrix\" npx prisma migrate dev --name add_feature_groups)",
+      "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups\")",
+      "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups/[groupId]\")",
+      "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups/[groupId]/activities\")",
+      "Bash(D:/RoadMapStrix/src/lib/api-client.ts:*)"
     ]
   }
 }

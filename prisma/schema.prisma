@@ -71,6 +71,7 @@ model Project {
   owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   activities     Activity[]
   members        ProjectMember[]
+  featureGroups  FeatureGroup[]
 }
 
 model ProjectMember {
@@ -111,8 +112,9 @@ model Activity {
   planningNote    String?
   project         Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tags            ActivityTag[]
-  dependsOn       ActivityDependency[] @relation("dependent")
-  blockedBy       ActivityDependency[] @relation("blocker")
+  dependsOn       ActivityDependency[]  @relation("dependent")
+  blockedBy       ActivityDependency[]  @relation("blocker")
+  featureGroups   FeatureGroupActivity[]
 }
 
 model ActivityTag {
@@ -131,4 +133,30 @@ model ActivityDependency {
   to     Activity @relation("dependent", fields: [toId], references: [id], onDelete: Cascade)
 
   @@unique([fromId, toId])
+}
+
+model FeatureGroup {
+  id          String                @id @default(cuid())
+  projectId   String
+  title       String                @default("Novo Grupo")
+  description String?               @db.Text
+  color       String                @default("#6366f1")
+  x           Int                   @default(40)
+  y           Int                   @default(40)
+  width       Int                   @default(420)
+  height      Int                   @default(320)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activities  FeatureGroupActivity[]
+}
+
+model FeatureGroupActivity {
+  id             String       @id @default(cuid())
+  featureGroupId String
+  activityId     String
+  featureGroup   FeatureGroup @relation(fields: [featureGroupId], references: [id], onDelete: Cascade)
+  activity       Activity     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([featureGroupId, activityId])
 }

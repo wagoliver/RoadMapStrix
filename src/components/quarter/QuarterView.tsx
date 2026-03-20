@@ -12,142 +12,243 @@ import { cn } from '@/lib/utils'
 const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4', 'wishlist'] as const
 type Quarter = typeof QUARTERS[number]
 
-const QUARTER_LABELS: Record<Quarter, string> = {
-  Q1: 'Q1 — Jan · Mar',
-  Q2: 'Q2 — Abr · Jun',
-  Q3: 'Q3 — Jul · Set',
-  Q4: 'Q4 — Out · Dez',
-  wishlist: 'Lista de Desejos',
-}
-
-const QUARTER_COLORS: Record<Quarter, string> = {
-  Q1: '#6366f1',
-  Q2: '#06b6d4',
-  Q3: '#f97316',
-  Q4: '#a855f7',
-  wishlist: '#ec4899',
+const QUARTER_META: Record<Quarter, { label: string; period: string; color: string; gradient: string }> = {
+  Q1:      { label: 'Q1', period: 'Jan – Mar', color: '#6366f1', gradient: 'from-indigo-500/10 to-transparent' },
+  Q2:      { label: 'Q2', period: 'Abr – Jun', color: '#06b6d4', gradient: 'from-cyan-500/10 to-transparent' },
+  Q3:      { label: 'Q3', period: 'Jul – Set', color: '#f97316', gradient: 'from-orange-500/10 to-transparent' },
+  Q4:      { label: 'Q4', period: 'Out – Dez', color: '#a855f7', gradient: 'from-purple-500/10 to-transparent' },
+  wishlist:{ label: '✦',  period: 'Lista de Desejos', color: '#ec4899', gradient: 'from-pink-500/10 to-transparent' },
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  'Backlog':       '#8b8fa3',
-  'Planejado':     '#06b6d4',
-  'Em Andamento':  '#818cf8',
-  'Em Review':     '#eab308',
-  'Em Produção':   '#16a34a',
-  'Concluído':     '#4ade80',
+  'Backlog':      '#8b8fa3',
+  'Planejado':    '#06b6d4',
+  'Em Andamento': '#818cf8',
+  'Em Review':    '#eab308',
+  'Em Produção':  '#16a34a',
+  'Concluído':    '#4ade80',
 }
+
+const STATUS_ORDER = ['Concluído', 'Em Produção', 'Em Review', 'Em Andamento', 'Planejado', 'Backlog']
 
 const SIZE_COLOR: Record<string, string> = {
-  S:  '#22c55e',
-  M:  '#eab308',
-  L:  '#f97316',
-  XL: '#ef4444',
+  S: '#22c55e', M: '#eab308', L: '#f97316', XL: '#ef4444',
 }
 
+// ─── Summary bar ────────────────────────────────────────────────────────────
+
+function SummaryBar({ activities }: { activities: Activity[] }) {
+  const total   = activities.length
+  const sprints = activities.reduce((s, a) => s + a.durationSprints, 0)
+  const done    = activities.filter((a) => a.planStatus === 'Concluído').length
+  const active  = activities.filter((a) => ['Em Andamento', 'Em Review', 'Em Produção'].includes(a.planStatus ?? '')).length
+  const pct     = total > 0 ? Math.round((done / total) * 100) : 0
+
+  const statCounts = STATUS_ORDER.map((s) => ({
+    label: s,
+    color: STATUS_COLOR[s],
+    count: activities.filter((a) => (a.planStatus ?? 'Backlog') === s).length,
+  })).filter((s) => s.count > 0)
+
+  return (
+    <div className="flex items-center gap-4 px-5 py-3 border-b border-border bg-card/60 flex-shrink-0 flex-wrap">
+      {/* Progress */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Progresso</span>
+          <span className="text-xl font-bold tabular-nums leading-none">{pct}%</span>
+        </div>
+        <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-full rounded-full bg-green-500 transition-all duration-700" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      <div className="w-px h-8 bg-border hidden sm:block" />
+
+      {/* KPIs */}
+      {[
+        { label: 'Cards',       value: total,   color: 'text-foreground' },
+        { label: 'Sprints',     value: sprints, color: 'text-foreground' },
+        { label: 'Ativos',      value: active,  color: 'text-indigo-400' },
+        { label: 'Concluídos',  value: done,    color: 'text-green-400'  },
+      ].map(({ label, value, color }) => (
+        <div key={label} className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{label}</span>
+          <span className={cn('text-xl font-bold tabular-nums leading-none', color)}>{value}</span>
+        </div>
+      ))}
+
+      <div className="w-px h-8 bg-border hidden sm:block" />
+
+      {/* Status pills */}
+      <div className="flex flex-wrap gap-1.5">
+        {statCounts.map(({ label, color, count }) => (
+          <span
+            key={label}
+            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full"
+            style={{ background: color + '18', color }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+            {label} · {count}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Status distribution bar ─────────────────────────────────────────────────
+
+function StatusBar({ activities }: { activities: Activity[] }) {
+  const total = activities.length
+  if (total === 0) return null
+
+  const segments = STATUS_ORDER.map((s) => ({
+    color: STATUS_COLOR[s],
+    pct: (activities.filter((a) => (a.planStatus ?? 'Backlog') === s).length / total) * 100,
+  })).filter((s) => s.pct > 0)
+
+  return (
+    <div className="flex h-1 rounded-full overflow-hidden gap-px">
+      {segments.map(({ color, pct }, i) => (
+        <div key={i} className="h-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
+      ))}
+    </div>
+  )
+}
+
+// ─── Activity card ───────────────────────────────────────────────────────────
+
 function ActivityCard({ activity }: { activity: Activity }) {
-  const statusColor = STATUS_COLOR[activity.planStatus ?? ''] ?? '#8b8fa3'
+  const statusColor = STATUS_COLOR[activity.planStatus ?? 'Backlog'] ?? '#8b8fa3'
   const areaColor   = AREA_COLORS[activity.area ?? '']   ?? '#6366f1'
   const teamColor   = TEAM_COLORS[activity.team ?? '']   ?? '#94a3b8'
   const sizeColor   = SIZE_COLOR[activity.sizeLabel ?? ''] ?? '#94a3b8'
 
   return (
-    <div className="bg-background border border-border rounded-lg p-3 flex flex-col gap-2 hover:border-primary/30 hover:shadow-sm transition-all">
-      {/* Top row: jiraRef + status */}
+    <div
+      className="group relative border border-border rounded-xl p-3 flex flex-col gap-2.5
+                 hover:border-primary/25 hover:shadow-md hover:-translate-y-px transition-all duration-150 cursor-default"
+      style={{ background: areaColor + '0a' }}
+    >
+      {/* Status + size */}
       <div className="flex items-center justify-between gap-2">
-        {activity.jiraRef ? (
-          <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
-            {activity.jiraRef}
-          </span>
-        ) : <span />}
         <span
-          className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
-          style={{ background: statusColor + '22', color: statusColor }}
+          className="flex items-center gap-1 text-[10px] font-semibold"
+          style={{ color: statusColor }}
         >
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusColor }} />
           {activity.planStatus ?? 'Backlog'}
         </span>
+        <div className="flex items-center gap-1">
+          {activity.sizeLabel && (
+            <span
+              className="text-[10px] font-bold w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+              style={{ background: sizeColor + '22', color: sizeColor }}
+            >
+              {activity.sizeLabel}
+            </span>
+          )}
+          {activity.jiraRef && (
+            <span className="text-[10px] font-mono font-bold text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded">
+              {activity.jiraRef}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Name */}
-      <p className="text-xs font-medium leading-snug line-clamp-2">{activity.name}</p>
+      <p className="text-xs font-semibold leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+        {activity.name}
+      </p>
 
       {/* Note */}
       {activity.planningNote && (
-        <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2 italic">
+        <p className="text-[10px] text-muted-foreground leading-snug line-clamp-1 italic border-t border-dashed border-border/60 pt-1.5">
           {activity.planningNote}
         </p>
       )}
 
-      {/* Bottom meta */}
-      <div className="flex flex-wrap items-center gap-1 mt-0.5">
-        {activity.area && (
-          <span
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded"
-            style={{ background: areaColor + '18', color: areaColor }}
-          >
-            {activity.area}
-          </span>
-        )}
-        {activity.team && (
-          <span
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded"
-            style={{ background: teamColor + '18', color: teamColor }}
-          >
-            {activity.team}
-          </span>
-        )}
-        {activity.sizeLabel && (
-          <span
-            className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-            style={{ background: sizeColor + '22', color: sizeColor }}
-          >
-            {activity.sizeLabel}
-          </span>
-        )}
-        {activity.durationSprints > 0 && (
-          <span className="text-[10px] text-muted-foreground ml-auto flex-shrink-0">
-            {activity.durationSprints}sp
-          </span>
-        )}
-      </div>
-
-      {/* Clients */}
-      {(activity.clients?.length ?? 0) > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {activity.clients!.map((c) => (
-            <span key={c} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400">
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-1 flex-wrap">
+        <div className="flex items-center gap-1 flex-wrap">
+          {activity.area && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+              style={{ background: areaColor + '15', color: areaColor }}>
+              {activity.area}
+            </span>
+          )}
+          {activity.team && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+              style={{ background: teamColor + '15', color: teamColor }}>
+              {activity.team}
+            </span>
+          )}
+          {(activity.clients?.length ?? 0) > 0 && activity.clients!.map((c) => (
+            <span key={c} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
               {c}
             </span>
           ))}
         </div>
-      )}
+        {activity.durationSprints > 0 && (
+          <span className="text-[10px] font-bold text-muted-foreground tabular-nums ml-auto">
+            {activity.durationSprints}<span className="font-normal opacity-60">sp</span>
+          </span>
+        )}
+      </div>
     </div>
   )
 }
 
+// ─── Quarter column ──────────────────────────────────────────────────────────
+
 function QuarterColumn({ quarter, activities }: { quarter: Quarter; activities: Activity[] }) {
-  const color = QUARTER_COLORS[quarter]
+  const { label, period, color, gradient } = QUARTER_META[quarter]
   const totalSprints = activities.reduce((s, a) => s + a.durationSprints, 0)
+  const doneCount    = activities.filter((a) => a.planStatus === 'Concluído').length
 
   return (
-    <div className="flex flex-col min-w-[280px] max-w-[280px] bg-card border border-border rounded-xl overflow-hidden flex-shrink-0">
-      {/* Header */}
-      <div className="px-3 py-2.5 border-b border-border flex items-center justify-between gap-2 flex-shrink-0"
-           style={{ borderTop: `3px solid ${color}` }}>
-        <span className="text-sm font-bold" style={{ color }}>{QUARTER_LABELS[quarter]}</span>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-semibold">
-            {activities.length} cards
-          </span>
-          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-semibold">
-            {totalSprints}sp
-          </span>
+    <div className="flex flex-col w-72 flex-shrink-0 rounded-2xl border border-border overflow-hidden bg-card shadow-sm">
+      {/* Column header */}
+      <div className={cn('px-4 pt-4 pb-3 bg-gradient-to-b', gradient)}>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black leading-none" style={{ color }}>{label}</span>
+              <span className="text-xs text-muted-foreground font-medium">{period}</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="text-[10px] font-semibold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-full">
+                {activities.length} cards
+              </span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: color + '18', color }}>
+                {totalSprints} sprints
+              </span>
+              {doneCount > 0 && (
+                <span className="text-[10px] font-semibold text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+                  {doneCount} ✓
+                </span>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Status distribution bar */}
+        <StatusBar activities={activities} />
       </div>
 
-      {/* Cards */}
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
+      {/* Cards list */}
+      <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2 min-h-0"
+           style={{ maxHeight: 'calc(100vh - 260px)' }}>
         {activities.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6 italic">Nenhum card</p>
+          <div className="flex flex-col items-center justify-center py-10 gap-2 opacity-40">
+            <div className="w-8 h-8 rounded-full border-2 border-dashed flex items-center justify-center"
+                 style={{ borderColor: color }}>
+              <span className="text-sm" style={{ color }}>·</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Nenhum card</p>
+          </div>
         ) : (
           activities.map((a) => <ActivityCard key={a.id} activity={a} />)
         )}
@@ -155,6 +256,8 @@ function QuarterColumn({ quarter, activities }: { quarter: Quarter; activities: 
     </div>
   )
 }
+
+// ─── Main view ───────────────────────────────────────────────────────────────
 
 export function QuarterView() {
   const { activities } = useRoadmapStore()
@@ -166,7 +269,6 @@ export function QuarterView() {
     selectedAreas,    setSelectedAreas,    clearSelectedAreas,
     selectedTeams,    setSelectedTeams,    clearSelectedTeams,
     selectedSizes,    setSelectedSizes,    clearSelectedSizes,
-    selectedOrigins,  setSelectedOrigins,  clearSelectedOrigins,
     selectedClients,  setSelectedClients,  clearSelectedClients,
     activeFilterCount, clearFilters, clientOptions, applyFilters,
   } = useActivityFilters(activities)
@@ -183,19 +285,13 @@ export function QuarterView() {
     return map
   }, [filtered])
 
-  const totalCards   = filtered.length
-  const totalSprints = filtered.reduce((s, a) => s + a.durationSprints, 0)
-
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Toolbar */}
-      <div className="h-12 border-b bg-background flex items-center px-4 gap-3 flex-shrink-0">
+      <div className="h-12 border-b bg-background flex items-center px-4 gap-3 flex-shrink-0 z-10">
         <h1 className="font-semibold text-sm">Por Quarter</h1>
         <div className="w-px h-5 bg-border" />
-        <span className="text-xs text-muted-foreground">{totalCards} cards · {totalSprints} sprints</span>
         <div className="flex-1" />
-
-        {/* Filter toggle */}
         <button
           onClick={() => setFilterOpen((v) => !v)}
           className={cn(
@@ -251,9 +347,12 @@ export function QuarterView() {
         </div>
       )}
 
-      {/* Kanban columns */}
+      {/* Summary bar */}
+      <SummaryBar activities={filtered} />
+
+      {/* Kanban board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-3 p-4 h-full items-start">
+        <div className="flex gap-4 p-5 h-full">
           {QUARTERS.map((q) => (
             <QuarterColumn key={q} quarter={q} activities={byQuarter[q]} />
           ))}

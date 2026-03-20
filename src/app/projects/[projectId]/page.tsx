@@ -7,12 +7,14 @@ import { useRoadmapStore } from '@/store/roadmapStore'
 import { RoadmapView } from '@/components/roadmap/RoadmapView'
 import { PlanningView } from '@/components/planning/PlanningView'
 import { QuarterView } from '@/components/quarter/QuarterView'
+import { StoryboardView } from '@/components/storyboard/StoryboardView'
 import { api, type ProjectDetail, type ActivityData } from '@/lib/api-client'
 import { toast } from 'sonner'
 import {
   Calendar,
   BarChart2,
   Layers,
+  LayoutTemplate,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -72,12 +74,13 @@ function extractDependencies(activities: ActivityData[]): ActivityDependency[] {
   return Array.from(deps.values())
 }
 
-type ActiveTab = 'planning' | 'gantt' | 'quarter'
+type ActiveTab = 'planning' | 'gantt' | 'quarter' | 'storyboard'
 
 const NAV_ITEMS = [
-  { key: 'planning' as const, label: 'Planejamento', icon: Calendar },
-  { key: 'gantt'    as const, label: 'Gantt',        icon: BarChart2 },
-  { key: 'quarter'  as const, label: 'Por Quarter',  icon: Layers },
+  { key: 'planning'   as const, label: 'Planejamento', icon: Calendar },
+  { key: 'gantt'      as const, label: 'Gantt',        icon: BarChart2 },
+  { key: 'quarter'    as const, label: 'Por Quarter',  icon: Layers },
+  { key: 'storyboard' as const, label: 'Storyboard',   icon: LayoutTemplate },
 ]
 
 export default function ProjectPage() {
@@ -245,9 +248,10 @@ export default function ProjectPage() {
 
         {/* Main content */}
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-          {activeTab === 'planning' && <PlanningView project={project} />}
-          {activeTab === 'gantt'    && <RoadmapView project={project} dependencies={dependencies} />}
-          {activeTab === 'quarter'  && <QuarterView />}
+          {activeTab === 'planning'   && <PlanningView project={project} />}
+          {activeTab === 'gantt'      && <RoadmapView project={project} dependencies={dependencies} />}
+          {activeTab === 'quarter'    && <QuarterView />}
+          {activeTab === 'storyboard' && <StoryboardView projectId={project.id} />}
         </div>
       </div>
     </div>
