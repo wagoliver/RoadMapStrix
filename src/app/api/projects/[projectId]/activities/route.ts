@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAuthUser, unauthorized, notFound, forbidden, badRequest } from '@/lib/api-utils'
 import { createActivitySchema } from '@/lib/validation'
@@ -60,26 +61,28 @@ export async function POST(request: NextRequest, { params }: Params) {
       return badRequest(parsed.error.issues[0]?.message ?? 'Invalid input')
     }
 
-    const activity = await prisma.activity.create({
-      data: {
-        name: parsed.data.name,
-        description: parsed.data.description,
-        color: parsed.data.color,
-        durationSprints: parsed.data.durationSprints,
-        projectId,
-        quarter: parsed.data.quarter,
-        area: parsed.data.area,
-        planStatus: parsed.data.planStatus ?? 'Backlog',
-        team: parsed.data.team,
-        sizeLabel: parsed.data.sizeLabel,
-        origin: parsed.data.origin,
-        clients: parsed.data.clients ?? [],
-        jiraRef: parsed.data.jiraRef,
-        planningNote: parsed.data.planningNote,
-        tags: {
-          create: parsed.data.tags.map((t) => ({ name: t.name, color: t.color })),
-        },
+    const createData: Prisma.ActivityUncheckedCreateInput = {
+      name: parsed.data.name,
+      description: parsed.data.description,
+      color: parsed.data.color,
+      durationSprints: parsed.data.durationSprints,
+      projectId,
+      quarter: parsed.data.quarter,
+      area: parsed.data.area,
+      planStatus: parsed.data.planStatus ?? 'Backlog',
+      team: parsed.data.team,
+      sizeLabel: parsed.data.sizeLabel,
+      origin: parsed.data.origin,
+      clients: parsed.data.clients ?? [],
+      jiraRef: parsed.data.jiraRef,
+      planningNote: parsed.data.planningNote,
+      tags: {
+        create: parsed.data.tags.map((t) => ({ name: t.name, color: t.color })),
       },
+    }
+
+    const activity = await prisma.activity.create({
+      data: createData,
       include: { tags: true, dependsOn: true, blockedBy: true },
     })
 

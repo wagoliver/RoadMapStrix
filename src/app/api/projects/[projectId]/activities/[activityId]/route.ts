@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAuthUser, unauthorized, notFound, forbidden } from '@/lib/api-utils'
 
@@ -38,28 +39,30 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const body = await request.json()
 
+    const updateData: Prisma.ActivityUncheckedUpdateInput = {
+      name: body.name,
+      description: body.description,
+      color: body.color,
+      durationSprints: body.durationSprints,
+      startDate: body.startDate !== undefined ? (body.startDate ? new Date(body.startDate) : null) : undefined,
+      rowIndex: body.rowIndex !== undefined ? body.rowIndex : undefined,
+      isDelivered: body.isDelivered,
+      deliveryDate: body.deliveryDate !== undefined ? (body.deliveryDate ? new Date(body.deliveryDate) : null) : undefined,
+      deliveryLabel: body.deliveryLabel !== undefined ? body.deliveryLabel : undefined,
+      quarter: body.quarter !== undefined ? body.quarter : undefined,
+      area: body.area !== undefined ? body.area : undefined,
+      planStatus: body.planStatus,
+      team: body.team !== undefined ? body.team : undefined,
+      sizeLabel: body.sizeLabel !== undefined ? body.sizeLabel : undefined,
+      origin: body.origin !== undefined ? body.origin : undefined,
+      clients: body.clients !== undefined ? body.clients : undefined,
+      jiraRef: body.jiraRef !== undefined ? body.jiraRef : undefined,
+      planningNote: body.planningNote !== undefined ? body.planningNote : undefined,
+    }
+
     const updated = await prisma.activity.update({
       where: { id: activityId },
-      data: {
-        name: body.name,
-        description: body.description,
-        color: body.color,
-        durationSprints: body.durationSprints,
-        startDate: body.startDate !== undefined ? (body.startDate ? new Date(body.startDate) : null) : undefined,
-        rowIndex: body.rowIndex !== undefined ? body.rowIndex : undefined,
-        isDelivered: body.isDelivered,
-        deliveryDate: body.deliveryDate !== undefined ? (body.deliveryDate ? new Date(body.deliveryDate) : null) : undefined,
-        deliveryLabel: body.deliveryLabel !== undefined ? body.deliveryLabel : undefined,
-        quarter: body.quarter !== undefined ? body.quarter : undefined,
-        area: body.area !== undefined ? body.area : undefined,
-        planStatus: body.planStatus,
-        team: body.team !== undefined ? body.team : undefined,
-        sizeLabel: body.sizeLabel !== undefined ? body.sizeLabel : undefined,
-        origin: body.origin !== undefined ? body.origin : undefined,
-        clients: body.clients !== undefined ? body.clients : undefined,
-        jiraRef: body.jiraRef !== undefined ? body.jiraRef : undefined,
-        planningNote: body.planningNote !== undefined ? body.planningNote : undefined,
-      },
+      data: updateData,
       include: { tags: true, dependsOn: true, blockedBy: true },
     })
 

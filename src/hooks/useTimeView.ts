@@ -2,9 +2,34 @@
 
 import { useCallback } from 'react'
 import { useRoadmapStore } from '@/store/roadmapStore'
-import { TIME_VIEWS, TimeView } from '@/lib/gantt/columnConfig'
+import { TIME_VIEWS, TimeView, COLUMN_CONFIG } from '@/lib/gantt/columnConfig'
 import { dateToPixel } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
+import { differenceInCalendarDays } from 'date-fns'
+
+// For wide views (quarter+), center the column that contains today rather than
+// the exact today pixel — gives a better overview of the current period.
+const WIDE_VIEWS: TimeView[] = ['quarter', 'semester', 'year']
+
+export function scrollToToday(
+  view: TimeView,
+  scrollEl: HTMLElement,
+) {
+  const chartStart = getChartStartDate()
+  const today = new Date()
+  const { columnWidthPx, unitDays } = COLUMN_CONFIG[view]
+
+  let targetPx: number
+  if (WIDE_VIEWS.includes(view)) {
+    const days = differenceInCalendarDays(today, chartStart)
+    const colIndex = Math.floor(days / unitDays)
+    targetPx = (colIndex + 0.5) * columnWidthPx          // midpoint of column
+  } else {
+    targetPx = dateToPixel(today, chartStart, view)       // exact today
+  }
+
+  scrollEl.scrollLeft = Math.max(0, targetPx - scrollEl.clientWidth / 2)
+}
 
 export function useTimeView() {
   const { timeView, setTimeView } = useRoadmapStore()
@@ -13,11 +38,10 @@ export function useTimeView() {
     (view: TimeView, scrollContainerRef?: React.RefObject<HTMLElement>) => {
       setTimeView(view)
       if (scrollContainerRef?.current) {
-        const chartStart = getChartStartDate()
-        const today = new Date()
-        const px = dateToPixel(today, chartStart, view)
-        const containerWidth = scrollContainerRef.current.clientWidth
-        scrollContainerRef.current.scrollLeft = Math.max(0, px - containerWidth / 2)
+        // Use rAF so the DOM has updated column widths before we scroll
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) scrollToToday(view, scrollContainerRef.current)
+        })
       }
     },
     [setTimeView]

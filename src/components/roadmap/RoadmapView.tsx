@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useMemo, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -12,14 +12,15 @@ import {
 } from '@dnd-kit/core'
 import { Activity, Project, CreateActivityInput, ActivityDependency } from '@/types'
 import { useRoadmapStore } from '@/store/roadmapStore'
-import { useTimeView } from '@/hooks/useTimeView'
+import { useTimeView, scrollToToday } from '@/hooks/useTimeView'
 import { GanttChart } from './GanttChart/GanttChart'
 import { ActivitySidebar } from './ActivitySidebar/ActivitySidebar'
 import { RoadmapToolbar } from './RoadmapToolbar'
 import { CreateActivityDialog } from './ActivitySidebar/CreateActivityDialog'
 import { MarkDeliveredDialog } from './ActivitySidebar/MarkDeliveredDialog'
+import { EditActivityDialog, type EditActivityValues } from '@/components/planning/EditActivityDialog'
 import { TimeView } from '@/lib/gantt/columnConfig'
-import { dateToPixel, activityWidthPx, pixelToDate, snapDateToView, dateToQuarter } from '@/lib/gantt/positionUtils'
+import { dateToPixel, activityWidthPx, pixelToDate, snapDateToView, dateToQuarter, quarterToStartDate } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
@@ -35,15 +36,96 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     activities,
     addActivity,
     updateActivity,
-    removeActivity,
     scheduleActivity,
     unscheduleActivity,
-    getUnscheduledActivities,
     getFilteredActivities,
+    setActivities,
     timeView,
   } = useRoadmapStore()
 
   const [scrollLeft, setScrollLeft] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const data = await api.activities.list(project.id)
+
+      const QUARTER_KEYS = ['Q1', 'Q2', 'Q3', 'Q4']
+
+      // Map all activities
+      const mapped: Activity[] = data.map((a) => ({
+        id: a.id,
+        name: a.name,
+        description: a.description ?? undefined,
+        color: a.color,
+        durationSprints: a.durationSprints,
+        startDate: a.startDate ? new Date(a.startDate) : null,
+        rowIndex: a.rowIndex ?? null,
+        isDelivered: a.isDelivered,
+        deliveryDate: a.deliveryDate ? new Date(a.deliveryDate) : null,
+        deliveryLabel: a.deliveryLabel ?? null,
+        projectId: a.projectId,
+        tags: a.tags,
+        createdAt: new Date(a.createdAt),
+        updatedAt: new Date(a.updatedAt),
+        quarter: a.quarter ?? undefined,
+        planStatus: a.planStatus ?? undefined,
+        team: a.team ?? undefined,
+        sizeLabel: a.sizeLabel ?? undefined,
+        origin: a.origin ?? undefined,
+        clients: a.clients ?? [],
+        jiraRef: a.jiraRef ?? undefined,
+        planningNote: a.planningNote ?? undefined,
+        area: a.area ?? undefined,
+      }))
+
+      // Find activities with a real quarter but no startDate — auto-schedule them
+      const needsScheduling = mapped.filter(
+        (a) => a.quarter && QUARTER_KEYS.includes(a.quarter) && !a.startDate
+      )
+
+      if (needsScheduling.length > 0) {
+        // Max rowIndex currently in use
+        let nextRow = mapped.reduce(
+          (max, a) => (a.rowIndex != null ? Math.max(max, a.rowIndex + 1) : max),
+          0
+        )
+
+        const updates = needsScheduling.map((a) => {
+          const startDate = quarterToStartDate(a.quarter!)
+          const rowIndex = nextRow++
+          return { id: a.id, startDate, rowIndex }
+        })
+
+        // Apply to mapped list
+        updates.forEach(({ id, startDate, rowIndex }) => {
+          const a = mapped.find((x) => x.id === id)
+          if (a) { a.startDate = startDate; a.rowIndex = rowIndex }
+        })
+
+        // Persist to DB (fire-and-forget per item)
+        await Promise.all(
+          updates.map(({ id, startDate, rowIndex }) =>
+            api.activities.update(project.id, id, {
+              startDate: startDate.toISOString(),
+              rowIndex,
+            })
+          )
+        )
+
+        toast.success(`Dados atualizados — ${updates.length} card(s) posicionados no Gantt`)
+      } else {
+        toast.success('Dados atualizados')
+      }
+
+      setActivities(mapped)
+    } catch {
+      toast.error('Falha ao atualizar dados')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
   const [deliveredActivity, setDeliveredActivity] = useState<Activity | null>(null)
   const [activeDragData, setActiveDragData] = useState<DragData | null>(null)
@@ -58,10 +140,7 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
 
   const handleScrollToToday = () => {
     if (!scrollContainerRef.current) return
-    const chartStart = getChartStartDate()
-    const px = dateToPixel(new Date(), chartStart, timeView)
-    const width = scrollContainerRef.current.clientWidth
-    scrollContainerRef.current.scrollLeft = Math.max(0, px - width / 2)
+    scrollToToday(timeView, scrollContainerRef.current)
   }
 
   const sensors = useSensors(
@@ -168,7 +247,7 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     }
   }
 
-  const handleEditActivitySubmit = async (input: CreateActivityInput) => {
+  const handleEditActivitySubmit = async (input: EditActivityValues) => {
     if (!editActivity) return
     try {
       await api.activities.update(project.id, editActivity.id, {
@@ -176,12 +255,28 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
         description: input.description,
         color: input.color,
         durationSprints: input.durationSprints,
+        area: input.area || null,
+        planStatus: input.planStatus,
+        team: input.team || null,
+        sizeLabel: input.sizeLabel || null,
+        origin: input.origin || null,
+        clients: input.clients,
+        jiraRef: input.jiraRef || null,
+        planningNote: input.planningNote || null,
       })
       updateActivity(editActivity.id, {
         name: input.name,
         description: input.description,
         color: input.color,
         durationSprints: input.durationSprints,
+        area: input.area || null,
+        planStatus: input.planStatus,
+        team: input.team || null,
+        sizeLabel: input.sizeLabel || null,
+        origin: input.origin || null,
+        clients: input.clients,
+        jiraRef: input.jiraRef || null,
+        planningNote: input.planningNote || null,
       })
       setEditActivity(null)
       toast.success('Activity updated')
@@ -272,15 +367,6 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
   const allActivitiesFiltered = getFilteredActivities()
   const scheduledFiltered = allActivitiesFiltered.filter((a) => a.startDate != null)
 
-  const allTags = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          activities.flatMap((a) => a.tags).map((t) => [t.name, { name: t.name, color: t.color }])
-        ).values()
-      ),
-    [activities]
-  )
 
   const activeDragActivity = activeDragData
     ? activities.find((a) => a.id === activeDragData.activityId)
@@ -295,6 +381,8 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
           onViewChange={handleViewChange}
           onScrollToToday={handleScrollToToday}
           onExport={handleExport}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
 
         <div className="flex flex-1 overflow-hidden">
@@ -347,12 +435,11 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
       </DragOverlay>
 
       {editActivity && (
-        <CreateActivityDialog
+        <EditActivityDialog
           open={!!editActivity}
           onOpenChange={(open) => !open && setEditActivity(null)}
+          activity={editActivity}
           onSubmit={handleEditActivitySubmit}
-          initialValues={editActivity}
-          mode="edit"
         />
       )}
 

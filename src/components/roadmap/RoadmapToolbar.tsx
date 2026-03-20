@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Download } from 'lucide-react'
+import { Calendar, Download, RefreshCw } from 'lucide-react'
 import { TimeView, COLUMN_CONFIG, TIME_VIEWS } from '@/lib/gantt/columnConfig'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,8 @@ interface RoadmapToolbarProps {
   onViewChange: (view: TimeView) => void
   onScrollToToday: () => void
   onExport?: () => void
+  onRefresh?: () => Promise<void>
+  isRefreshing?: boolean
 }
 
 export function RoadmapToolbar({
@@ -20,6 +22,8 @@ export function RoadmapToolbar({
   onViewChange,
   onScrollToToday,
   onExport,
+  onRefresh,
+  isRefreshing = false,
 }: RoadmapToolbarProps) {
   return (
     <div className="h-12 border-b bg-background flex items-center px-4 gap-3 flex-shrink-0">
@@ -56,6 +60,14 @@ export function RoadmapToolbar({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Refresh */}
+      {onRefresh && (
+        <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing} className="h-7 text-xs gap-1">
+          <RefreshCw className={cn('w-3 h-3', isRefreshing && 'animate-spin')} />
+          {isRefreshing ? 'Atualizando...' : 'Refresh'}
+        </Button>
+      )}
 
       {/* Export */}
       {onExport && (
