@@ -16,18 +16,17 @@ import { useTimeView, scrollToToday } from '@/hooks/useTimeView'
 import { GanttChart } from './GanttChart/GanttChart'
 import { ActivitySidebar } from './ActivitySidebar/ActivitySidebar'
 import { RoadmapToolbar } from './RoadmapToolbar'
-import { CreateActivityDialog } from './ActivitySidebar/CreateActivityDialog'
 import { MarkDeliveredDialog } from './ActivitySidebar/MarkDeliveredDialog'
 import { EditActivityDialog, type EditActivityValues } from '@/components/planning/EditActivityDialog'
 import { TimeView } from '@/lib/gantt/columnConfig'
-import { dateToPixel, activityWidthPx, pixelToDate, snapDateToView, dateToQuarter, quarterToStartDate } from '@/lib/gantt/positionUtils'
+import { activityWidthPx, pixelToDate, snapDateToView, dateToQuarter, quarterToStartDate } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import type { DragData } from '@/hooks/useDragActivity'
 import { FilterDropdown } from '@/components/ui/FilterDropdown'
 import { useActivityFilters, STATUS_OPTIONS, AREA_OPTIONS, TEAM_OPTIONS, SIZE_OPTIONS, ORIGIN_OPTIONS } from '@/hooks/useActivityFilters'
-import { SlidersHorizontal, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 
 interface RoadmapViewProps {
   project: Project
@@ -196,10 +195,7 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
       return
     }
 
-    let rowIndex = 0
-    if (overId.startsWith('row-')) {
-      rowIndex = parseInt(overId.replace('row-', ''), 10)
-    } else if (overId !== 'gantt-chart') {
+    if (!overId.startsWith('row-') && overId !== 'gantt-chart') {
       return
     }
 

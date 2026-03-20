@@ -60,12 +60,10 @@ const STATUS_COLOR: Record<string, string> = {
 // ─── Activity Picker ──────────────────────────────────────────────────────────
 
 function ActivityPicker({
-  projectId,
   group,
   onClose,
   onToggle,
 }: {
-  projectId: string
   group: FeatureGroup
   onClose: () => void
   onToggle: (activityId: string, linked: boolean) => Promise<void>
@@ -421,7 +419,6 @@ function GroupTile({
       {/* Activity Picker overlay */}
       {showPicker && (
         <ActivityPicker
-          projectId={projectId}
           group={group}
           onClose={() => setShowPicker(false)}
           onToggle={async (activityId, linked) => {
@@ -530,7 +527,7 @@ export function StoryboardView({ projectId }: { projectId: string }) {
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
               <div className="text-4xl opacity-20">✦</div>
               <p className="text-sm text-muted-foreground/50 font-medium">Canvas vazio</p>
-              <p className="text-xs text-muted-foreground/40">Clique em "Novo Grupo" para começar</p>
+              <p className="text-xs text-muted-foreground/40">Clique em &quot;Novo Grupo&quot; para começar</p>
             </div>
           )}
 
