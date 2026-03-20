@@ -14,11 +14,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Map, Calendar, Settings, Trash2, LogOut, Loader2, Users, LayoutList } from 'lucide-react'
+import { Plus, LayoutGrid, Calendar, Settings, Trash2, LogOut, Loader2, Users, LayoutList, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { api, type ProjectListItem } from '@/lib/api-client'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import {
   PRESET_COLORS,
   DEFAULT_ACTIVITY_COLOR,
@@ -64,7 +64,6 @@ export default function ProjectsPage() {
     e.preventDefault()
     if (!name.trim()) return
     setCreating(true)
-
     try {
       const project = await api.projects.create({
         name: name.trim(),
@@ -72,7 +71,6 @@ export default function ProjectsPage() {
         color,
         sprintDuration,
       })
-
       setName('')
       setDescription('')
       setColor(DEFAULT_ACTIVITY_COLOR)
@@ -90,7 +88,6 @@ export default function ProjectsPage() {
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirm('Delete this project? This cannot be undone.')) return
-
     try {
       await api.projects.delete(id)
       setProjects((prev) => prev.filter((p) => p.id !== id))
@@ -102,99 +99,162 @@ export default function ProjectsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
       </div>
     )
   }
 
+  const userInitial = (session?.user?.name ?? session?.user?.email ?? 'U')[0].toUpperCase()
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Map className="w-6 h-6 text-primary" />
-          <h1 className="text-xl font-bold">RoadMapStrix</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{session?.user?.name ?? session?.user?.email}</span>
-          <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Project
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: '/login' })}>
-            <LogOut className="w-4 h-4" />
-          </Button>
+      <header
+        className="sticky top-0 z-50 border-b backdrop-blur-md"
+        style={{ background: 'var(--header-bg)', borderColor: 'var(--header-border)' }}
+      >
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+              <LayoutGrid className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="font-bold text-base tracking-tight">RoadMapStrix</span>
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <div className="w-px h-5 bg-border mx-1" />
+            {/* User avatar */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
+                {userInitial}
+              </div>
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                {session?.user?.name ?? session?.user?.email}
+              </span>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ml-1"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold">Projects</h2>
-          <p className="text-muted-foreground mt-1">Select a project to open its roadmap</p>
+      {/* Main */}
+      <main className="max-w-6xl mx-auto px-6 py-10">
+        {/* Page header */}
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {projects.length > 0
+                ? `${projects.length} project${projects.length !== 1 ? 's' : ''}`
+                : 'Create your first project to start planning'}
+            </p>
+          </div>
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="gap-2 shadow-sm"
+            style={{ background: 'var(--gradient-primary)' }}
+          >
+            <Plus className="w-4 h-4" />
+            New Project
+          </Button>
         </div>
 
         {projects.length === 0 ? (
-          <div className="text-center py-24 text-muted-foreground">
-            <Map className="w-16 h-16 mx-auto mb-4 opacity-20" />
-            <h3 className="text-lg font-medium mb-2">No projects yet</h3>
-            <p className="text-sm mb-4">Create your first project to start planning</p>
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
+          /* Empty state */
+          <div className="border border-dashed rounded-2xl py-24 flex flex-col items-center gap-4 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <LayoutGrid className="w-7 h-7 text-primary/60" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-base">No projects yet</h3>
+              <p className="text-sm text-muted-foreground mt-1">Create your first roadmap to get started</p>
+            </div>
+            <Button onClick={() => setCreateOpen(true)} variant="outline" className="mt-2 gap-2">
+              <Plus className="w-4 h-4" />
               Create Project
             </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((project) => (
-              <Card
+              <div
                 key={project.id}
-                className="cursor-pointer hover:shadow-md transition-shadow group"
+                className="group relative bg-card rounded-xl border cursor-pointer transition-all duration-200 overflow-hidden card-elevated"
+                style={{ boxShadow: 'var(--card-shadow)' }}
                 onClick={() => router.push(`/projects/${project.id}`)}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--card-shadow-hover)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--card-shadow)' }}
               >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div
-                      className="w-3 h-3 rounded-full mt-1 flex-shrink-0"
-                      style={{ backgroundColor: project.color }}
-                    />
-                    <button
-                      onClick={(e) => handleDelete(project.id, e)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {/* Color accent bar */}
+                <div className="h-1 w-full" style={{ backgroundColor: project.color }} />
+
+                <div className="p-5">
+                  {/* Title row */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-semibold text-sm leading-snug flex-1">{project.name}</h3>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <button
+                        onClick={(e) => handleDelete(project.id, e)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <CardTitle className="text-base mt-2">{project.name}</CardTitle>
+
                   {project.description && (
-                    <CardDescription className="line-clamp-2">
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
                       {project.description}
-                    </CardDescription>
+                    </p>
                   )}
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-3 pt-3 border-t">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {format(new Date(project.createdAt), 'MMM d, yyyy')}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Settings className="w-3 h-3" />
-                      {project.sprintDuration}d sprints
-                    </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 ml-auto">
                       <LayoutList className="w-3 h-3" />
-                      {project._count.activities}
+                      {project._count.activities} items
                     </span>
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" />
                       {project._count.members}
                     </span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Hover arrow */}
+                <div className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0">
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </div>
             ))}
+
+            {/* Add project card */}
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="group border border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/[0.03] transition-all min-h-[120px]"
+            >
+              <div className="w-8 h-8 rounded-lg border border-dashed border-current flex items-center justify-center group-hover:border-primary/50 group-hover:text-primary transition-colors">
+                <Plus className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-medium">New Project</span>
+            </button>
           </div>
         )}
       </main>
@@ -245,11 +305,11 @@ export default function ProjectsPage() {
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110"
+                    className="w-7 h-7 rounded-full transition-transform hover:scale-110"
                     style={{
                       backgroundColor: c,
-                      borderColor: color === c ? 'white' : 'transparent',
-                      boxShadow: color === c ? `0 0 0 2px ${c}` : undefined,
+                      outline: color === c ? `3px solid ${c}` : undefined,
+                      outlineOffset: color === c ? '2px' : undefined,
                     }}
                   />
                 ))}

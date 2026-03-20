@@ -32,6 +32,14 @@ export const createActivitySchema = z.object({
     .max(ACTIVITY_DURATION_MAX)
     .default(1),
   tags: z.array(tagSchema).max(20).default([]),
+  quarter: z.string().max(20).optional(),
+  planStatus: z.string().max(50).optional(),
+  team: z.string().max(100).optional(),
+  sizeLabel: z.enum(['S', 'M', 'L', 'XL']).optional(),
+  origin: z.string().max(50).optional(),
+  clients: z.array(z.string().max(100)).max(50).optional(),
+  jiraRef: z.string().max(100).optional(),
+  planningNote: z.string().max(2000).optional(),
 })
 
 export const storedProjectSchema = z.object({

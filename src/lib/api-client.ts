@@ -121,6 +121,14 @@ export interface ActivityData {
   tags: TagData[]
   dependsOn: DependencyData[]
   blockedBy: DependencyData[]
+  quarter: string | null
+  planStatus: string
+  team: string | null
+  sizeLabel: string | null
+  origin: string | null
+  clients: string[]
+  jiraRef: string | null
+  planningNote: string | null
 }
 
 export interface TagData {
@@ -157,6 +165,14 @@ export interface CreateActivityData {
   color?: string
   durationSprints?: number
   tags?: { name: string; color: string }[]
+  quarter?: string
+  planStatus?: string
+  team?: string
+  sizeLabel?: string
+  origin?: string
+  clients?: string[]
+  jiraRef?: string
+  planningNote?: string
 }
 
 export interface UpdateActivityData {
@@ -169,4 +185,12 @@ export interface UpdateActivityData {
   isDelivered?: boolean
   deliveryDate?: string | null
   deliveryLabel?: string | null
+  quarter?: string | null
+  planStatus?: string
+  team?: string | null
+  sizeLabel?: string | null
+  origin?: string | null
+  clients?: string[]
+  jiraRef?: string | null
+  planningNote?: string | null
 }

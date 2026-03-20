@@ -29,6 +29,7 @@ interface CreateActivityDialogProps {
   onSubmit: (input: CreateActivityInput) => void
   initialValues?: Partial<Activity>
   mode?: 'create' | 'edit'
+  defaultQuarter?: string
 }
 
 export function CreateActivityDialog({
@@ -37,6 +38,7 @@ export function CreateActivityDialog({
   onSubmit,
   initialValues,
   mode = 'create',
+  defaultQuarter,
 }: CreateActivityDialogProps) {
   const [name, setName] = useState(initialValues?.name ?? '')
   const [description, setDescription] = useState(initialValues?.description ?? '')
@@ -68,6 +70,7 @@ export function CreateActivityDialog({
       color,
       durationSprints,
       tags,
+      quarter: initialValues?.quarter ?? defaultQuarter,
     })
     if (mode === 'create') {
       setName('')

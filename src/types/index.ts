@@ -26,6 +26,15 @@ export interface Activity {
   tags: ActivityTag[]
   createdAt: Date
   updatedAt: Date
+  // Planning fields
+  quarter?: string | null
+  planStatus?: string
+  team?: string | null
+  sizeLabel?: string | null
+  origin?: string | null
+  clients?: string[]
+  jiraRef?: string | null
+  planningNote?: string | null
 }
 
 export interface ProjectMember {
@@ -61,6 +70,14 @@ export type CreateActivityInput = {
   color?: string
   durationSprints?: number
   tags?: { name: string; color: string }[]
+  quarter?: string
+  planStatus?: string
+  team?: string
+  sizeLabel?: string
+  origin?: string
+  clients?: string[]
+  jiraRef?: string
+  planningNote?: string
 }
 
 export type UpdateActivityInput = Partial<{
@@ -73,4 +90,12 @@ export type UpdateActivityInput = Partial<{
   isDelivered: boolean
   deliveryDate: Date | null
   deliveryLabel: string | null
+  quarter: string | null
+  planStatus: string
+  team: string | null
+  sizeLabel: string | null
+  origin: string | null
+  clients: string[]
+  jiraRef: string | null
+  planningNote: string | null
 }>

@@ -99,6 +99,15 @@ model Activity {
   projectId       String
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
+  // Planning fields
+  quarter         String?
+  planStatus      String               @default("Backlog")
+  team            String?
+  sizeLabel       String?
+  origin          String?
+  clients         String[]
+  jiraRef         String?
+  planningNote    String?
   project         Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tags            ActivityTag[]
   dependsOn       ActivityDependency[] @relation("dependent")

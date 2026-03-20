@@ -11,7 +11,17 @@
       "Bash(npx tsc:*)",
       "Bash(npx prisma:*)",
       "Bash(npm run:*)",
-      "Bash(find '/c/Users/wagneroliveira/OneDrive - ARCTICA SERVIÇOS TM TECNOLOGIA DA INFORMAÇÃO LTDA/RoadMapStrix/node_modules' -name tailwind.css -path */shadcn/*)"
+      "Bash(find '/c/Users/wagneroliveira/OneDrive - ARCTICA SERVIÇOS TM TECNOLOGIA DA INFORMAÇÃO LTDA/RoadMapStrix/node_modules' -name tailwind.css -path */shadcn/*)",
+      "Bash(docker exec:*)",
+      "Bash(PGPASSWORD=roadmap psql -h localhost -U roadmap -d roadmapstrix -c \"SELECT version\\(\\)\" 2>&1)",
+      "Bash(DATABASE_URL=\"postgresql://roadmap:roadmap@127.0.0.1:5432/roadmapstrix\" npx prisma migrate dev --name add-planning-fields 2>&1)",
+      "Bash(docker cp:*)",
+      "Bash(prisma/migrations/20260319_add_planning_fields/migration.sql:*)",
+      "Bash(docker compose:*)",
+      "Bash(npm test:*)",
+      "Bash(echo \"Exit: $?\")",
+      "WebFetch(domain:v0.app)",
+      "Bash(npm list:*)"
     ]
   }
 }
