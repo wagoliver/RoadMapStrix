@@ -20,24 +20,34 @@ import { PRESET_COLORS, DEFAULT_TAG_COLOR } from '@/lib/constants'
 // ── Constants ──────────────────────────────────────────────────────────────
 
 export const TEAM_COLORS: Record<string, string> = {
-  AGENTE: '#6366f1',
-  VERDE:  '#22c55e',
-  AZUL:   '#3b82f6',
-  SRE:    '#f97316',
-  AMARELO:'#eab308',
-  KARL:   '#ec4899',
-  WAGNER: '#a855f7',
+  'Feature':        '#22c55e',
+  'Melhoria':       '#3b82f6',
+  'Bug':            '#ef4444',
+  'Débito Técnico': '#f97316',
+  'Pesquisa':       '#a855f7',
+  'Integração':     '#06b6d4',
 }
 
 const TEAMS = Object.keys(TEAM_COLORS)
+
+export const AREA_COLORS: Record<string, string> = {
+  'Core Platform': '#6366f1',
+  'Agentes':       '#a855f7',
+  'Marketplace':   '#06b6d4',
+  'Analytics':     '#3b82f6',
+  'Integrações':   '#eab308',
+  'Backoffice':    '#64748b',
+}
+
+const AREAS = Object.keys(AREA_COLORS)
 
 const STATUSES = [
   { key: 'Backlog',       color: '#8b8fa3' },
   { key: 'Planejado',     color: '#06b6d4' },
   { key: 'Em Andamento',  color: '#818cf8' },
   { key: 'Em Review',     color: '#eab308' },
-  { key: 'Em Produção',   color: '#f97316' },
-  { key: 'Concluído',     color: '#22c55e' },
+  { key: 'Em Produção',   color: '#16a34a' },
+  { key: 'Concluído',     color: '#4ade80' },
 ]
 
 const SIZES = [
@@ -62,6 +72,7 @@ export interface EditActivityValues {
   description: string
   jiraRef: string
   quarter: string
+  area: string
   planStatus: string
   team: string
   sizeLabel: string
@@ -111,6 +122,7 @@ export function EditActivityDialog({
   const [description, setDescription] = useState('')
   const [jiraRef, setJiraRef] = useState('')
   const [quarter, setQuarter] = useState('')
+  const [area, setArea] = useState('')
   const [planStatus, setPlanStatus] = useState('Backlog')
   const [team, setTeam] = useState('')
   const [sizeLabel, setSizeLabel] = useState('')
@@ -131,6 +143,7 @@ export function EditActivityDialog({
     setDescription(activity.description ?? '')
     setJiraRef(activity.jiraRef ?? '')
     setQuarter(activity.quarter ?? '')
+    setArea(activity.area ?? '')
     setPlanStatus(activity.planStatus ?? 'Backlog')
     setTeam(activity.team ?? '')
     setSizeLabel(activity.sizeLabel ?? '')
@@ -198,6 +211,7 @@ export function EditActivityDialog({
         description: description.trim(),
         jiraRef: jiraRef.trim(),
         quarter,
+        area,
         planStatus,
         team,
         sizeLabel,
@@ -297,6 +311,42 @@ export function EditActivityDialog({
                     style={quarter === q.key ? { background: q.color, borderColor: q.color } : {}}
                   >
                     {q.key === 'wishlist' ? '⭐ Wishlist' : q.key}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Area */}
+            <div className="space-y-1.5">
+              <Label>Área de Produto</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setArea('')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                    area === ''
+                      ? 'border-border bg-secondary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  }`}
+                >
+                  Nenhuma
+                </button>
+                {AREAS.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => setArea(a)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                      area === a ? 'border-transparent' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                    }`}
+                    style={
+                      area === a
+                        ? { background: `${AREA_COLORS[a]}22`, color: AREA_COLORS[a], borderColor: `${AREA_COLORS[a]}44` }
+                        : {}
+                    }
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: AREA_COLORS[a] }} />
+                    {a}
                   </button>
                 ))}
               </div>

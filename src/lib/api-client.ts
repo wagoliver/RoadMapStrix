@@ -122,6 +122,7 @@ export interface ActivityData {
   dependsOn: DependencyData[]
   blockedBy: DependencyData[]
   quarter: string | null
+  area: string | null
   planStatus: string
   team: string | null
   sizeLabel: string | null
@@ -166,6 +167,7 @@ export interface CreateActivityData {
   durationSprints?: number
   tags?: { name: string; color: string }[]
   quarter?: string
+  area?: string
   planStatus?: string
   team?: string
   sizeLabel?: string
@@ -186,6 +188,7 @@ export interface UpdateActivityData {
   deliveryDate?: string | null
   deliveryLabel?: string | null
   quarter?: string | null
+  area?: string | null
   planStatus?: string
   team?: string | null
   sizeLabel?: string | null

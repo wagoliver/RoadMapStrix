@@ -51,6 +51,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         deliveryDate: body.deliveryDate !== undefined ? (body.deliveryDate ? new Date(body.deliveryDate) : null) : undefined,
         deliveryLabel: body.deliveryLabel !== undefined ? body.deliveryLabel : undefined,
         quarter: body.quarter !== undefined ? body.quarter : undefined,
+        area: body.area !== undefined ? body.area : undefined,
         planStatus: body.planStatus,
         team: body.team !== undefined ? body.team : undefined,
         sizeLabel: body.sizeLabel !== undefined ? body.sizeLabel : undefined,

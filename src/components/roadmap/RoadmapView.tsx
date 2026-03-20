@@ -19,7 +19,7 @@ import { RoadmapToolbar } from './RoadmapToolbar'
 import { CreateActivityDialog } from './ActivitySidebar/CreateActivityDialog'
 import { MarkDeliveredDialog } from './ActivitySidebar/MarkDeliveredDialog'
 import { TimeView } from '@/lib/gantt/columnConfig'
-import { dateToPixel, activityWidthPx, pixelToDate, snapDateToView } from '@/lib/gantt/positionUtils'
+import { dateToPixel, activityWidthPx, pixelToDate, snapDateToView, dateToQuarter } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
@@ -126,8 +126,13 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     }
 
     const snapped = snapDateToView(newStartDate, timeView)
+    const newQuarter = dateToQuarter(snapped)
+
     scheduleActivity(dragData.activityId, snapped, rowIndex)
+    updateActivity(dragData.activityId, { quarter: newQuarter })
+
     persistSchedule(dragData.activityId, snapped, rowIndex)
+    api.activities.update(project.id, dragData.activityId, { quarter: newQuarter }).catch(() => {})
   }
 
   const handleCreateActivity = async (input: CreateActivityInput) => {

@@ -101,6 +101,7 @@ model Activity {
   updatedAt       DateTime             @updatedAt
   // Planning fields
   quarter         String?
+  area            String?
   planStatus      String               @default("Backlog")
   team            String?
   sizeLabel       String?

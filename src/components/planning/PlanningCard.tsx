@@ -10,13 +10,21 @@ import { toast } from 'sonner'
 import { Trash2, Pencil } from 'lucide-react'
 
 export const TEAM_COLORS: Record<string, string> = {
-  AGENTE: '#6366f1',
-  VERDE: '#22c55e',
-  AZUL: '#3b82f6',
-  SRE: '#f97316',
-  AMARELO: '#eab308',
-  KARL: '#ec4899',
-  WAGNER: '#a855f7',
+  'Feature':        '#22c55e',
+  'Melhoria':       '#3b82f6',
+  'Bug':            '#ef4444',
+  'Débito Técnico': '#f97316',
+  'Pesquisa':       '#a855f7',
+  'Integração':     '#06b6d4',
+}
+
+export const AREA_COLORS: Record<string, string> = {
+  'Core Platform': '#6366f1',
+  'Agentes':       '#a855f7',
+  'Marketplace':   '#06b6d4',
+  'Analytics':     '#3b82f6',
+  'Integrações':   '#eab308',
+  'Backoffice':    '#64748b',
 }
 
 const SIZE_COLORS: Record<string, string> = {
@@ -31,8 +39,8 @@ const STATUSES: PopupOption[] = [
   { key: 'Planejado', label: 'Planejado', color: '#06b6d4' },
   { key: 'Em Andamento', label: 'Em Andamento', color: '#818cf8' },
   { key: 'Em Review', label: 'Em Review', color: '#eab308' },
-  { key: 'Em Produção', label: 'Em Produção', color: '#f97316' },
-  { key: 'Concluído', label: 'Concluído', color: '#22c55e' },
+  { key: 'Em Produção', label: 'Em Produção', color: '#16a34a' },
+  { key: 'Concluído', label: 'Concluído', color: '#4ade80' },
 ]
 
 const SIZES: PopupOption[] = [
@@ -51,7 +59,7 @@ const STATUS_COLORS: Record<string, string> = Object.fromEntries(
 )
 
 interface PopupState {
-  type: 'status' | 'size' | 'team'
+  type: 'status' | 'size' | 'team' | 'area'
   anchor: HTMLElement
 }
 
@@ -59,9 +67,10 @@ interface PlanningCardProps {
   activity: Activity
   projectId: string
   onDelete: (id: string) => void
+  compact?: boolean
 }
 
-export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProps) {
+export function PlanningCard({ activity, projectId, onDelete, compact = false }: PlanningCardProps) {
   const { updateActivity } = useRoadmapStore()
   const [popup, setPopup] = useState<PopupState | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -80,6 +89,7 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
         color: values.color,
         durationSprints: values.durationSprints,
         quarter: values.quarter || null,
+        area: values.area || null,
         planStatus: values.planStatus,
         team: values.team || null,
         sizeLabel: values.sizeLabel || null,
@@ -94,6 +104,7 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
         color: values.color,
         durationSprints: values.durationSprints,
         quarter: values.quarter || null,
+        area: values.area || null,
         planStatus: values.planStatus,
         team: values.team || null,
         sizeLabel: (values.sizeLabel as Activity['sizeLabel']) || null,
@@ -123,6 +134,10 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
 
   const handleStatusSelect = (key: string) => {
     persist({ planStatus: key })
+  }
+
+  const handleAreaSelect = (key: string) => {
+    persist({ area: key || null })
   }
 
   const handleSizeSelect = (key: string) => {
@@ -171,7 +186,8 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
 
   return (
     <div
-      className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-2.5 cursor-grab hover:bg-white/[0.06] hover:border-primary/25 transition-all group"
+      className="bg-card border rounded-xl p-2.5 cursor-grab hover:brightness-105 transition-all group"
+      style={{ borderColor: `${activity.color}45` }}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('activityId', activity.id)
@@ -181,24 +197,47 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
       {/* Header row */}
       <div className="flex items-start gap-1.5 mb-0.5">
         {activity.id && (
-          <span className="text-[10px] text-muted-foreground bg-white/[0.06] px-1.5 py-0.5 rounded font-bold flex-shrink-0">
+          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-bold flex-shrink-0">
             #{activity.id.slice(-4)}
           </span>
         )}
         <span className="text-[13px] font-semibold leading-snug flex-1">{activity.name}</span>
-        {/* Client pills when origin=cliente */}
+        {/* Client pills */}
         {clients.length > 0 && (
-          <div className="flex gap-1 flex-wrap ml-auto flex-shrink-0">
-            {clients.map((c) => (
+          <div className="flex gap-1 items-center ml-auto flex-shrink-0">
+            {compact ? (
+              /* Wishlist: só o contador */
               <span
-                key={c}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 text-[10px] font-semibold border border-yellow-500/20 cursor-pointer hover:bg-yellow-500/25"
-                onClick={() => handleRemoveClient(c)}
-                title="Click to remove"
+                onClick={() => setEditOpen(true)}
+                title={clients.join(', ')}
               >
-                {c} <span className="opacity-60 text-[11px]">×</span>
+                👥 {clients.length}
               </span>
-            ))}
+            ) : (
+              /* Quarters: até 2 nomes + +N */
+              <>
+                {clients.slice(0, 2).map((c) => (
+                  <span
+                    key={c}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 text-[10px] font-semibold border border-yellow-500/20 cursor-pointer hover:bg-yellow-500/25 max-w-[80px] truncate"
+                    onClick={() => handleRemoveClient(c)}
+                    title={`${c} — clique para remover`}
+                  >
+                    {c}
+                  </span>
+                ))}
+                {clients.length > 2 && (
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-semibold border border-yellow-500/20 cursor-pointer hover:bg-yellow-500/20"
+                    onClick={() => setEditOpen(true)}
+                    title={clients.slice(2).join(', ')}
+                  >
+                    +{clients.length - 2}
+                  </span>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -243,6 +282,20 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
           {activity.team ?? 'time'}
         </button>
 
+        {/* Area */}
+        {activity.area && (() => {
+          const areaColor = AREA_COLORS[activity.area] ?? '#64748b'
+          return (
+            <button
+              className="text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer hover:brightness-125 transition-all"
+              style={{ background: `${areaColor}22`, color: areaColor }}
+              onClick={(e) => setPopup({ type: 'area', anchor: e.currentTarget })}
+            >
+              {activity.area}
+            </button>
+          )
+        })()}
+
         {/* Jira ref */}
         {activity.jiraRef && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-semibold">
@@ -281,7 +334,7 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
       {showClientInput && (
         <div className="mt-1.5 flex gap-1">
           <input
-            className="flex-1 bg-white/[0.03] border border-white/[0.08] rounded text-[12px] px-2 py-0.5 text-foreground outline-none focus:border-yellow-500/50 placeholder:text-white/20 placeholder:italic"
+            className="flex-1 bg-muted/40 border border-border rounded text-[12px] px-2 py-0.5 text-foreground outline-none focus:border-yellow-500/50 placeholder:text-muted-foreground/40 placeholder:italic"
             placeholder="Nome do cliente..."
             value={clientInput}
             onChange={(e) => setClientInput(e.target.value)}
@@ -307,7 +360,7 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
           {noteSaved && <span className="text-[9px] text-green-400 ml-auto">salvo</span>}
         </div>
         <textarea
-          className="w-full bg-white/[0.03] border border-white/[0.08] rounded text-[11px] px-1.5 py-1 text-foreground outline-none focus:border-primary/40 placeholder:text-white/20 placeholder:italic resize-none min-h-6 max-h-20"
+          className="w-full bg-muted/40 border border-border rounded text-[11px] px-1.5 py-1 text-foreground outline-none focus:border-primary/40 placeholder:text-muted-foreground/40 placeholder:italic resize-none min-h-6 max-h-20"
           placeholder="Nota de planejamento..."
           value={note}
           onChange={(e) => handleNoteChange(e.target.value)}
@@ -347,10 +400,20 @@ export function PlanningCard({ activity, projectId, onDelete }: PlanningCardProp
       {popup?.type === 'team' && (
         <PopupSelector
           anchorEl={popup.anchor}
-          title="Time"
+          title="Tipo"
           options={getTeamOptions()}
           activeKey={activity.team ?? null}
           onSelect={handleTeamSelect}
+          onClose={() => setPopup(null)}
+        />
+      )}
+      {popup?.type === 'area' && (
+        <PopupSelector
+          anchorEl={popup.anchor}
+          title="Área de Produto"
+          options={Object.entries(AREA_COLORS).map(([key, color]) => ({ key, label: key, color }))}
+          activeKey={activity.area ?? null}
+          onSelect={handleAreaSelect}
           onClose={() => setPopup(null)}
         />
       )}

@@ -5,6 +5,7 @@ import {
   startOfISOWeek,
   startOfMonth,
   startOfQuarter,
+  endOfQuarter,
   startOfYear,
 } from 'date-fns'
 import { TimeView, dayWidthPx } from './columnConfig'
@@ -55,4 +56,33 @@ export function getActivityEndDate(
   sprintDays: number
 ): Date {
   return addDays(startDate, durationSprints * sprintDays)
+}
+
+const QUARTER_MONTHS: Record<string, number> = { Q1: 0, Q2: 3, Q3: 6, Q4: 9 }
+
+export function quarterToStartDate(quarter: string, year = 2026): Date {
+  const month = QUARTER_MONTHS[quarter]
+  if (month === undefined) return new Date(year, 0, 1)
+  return new Date(year, month, 1)
+}
+
+export function dateToQuarter(date: Date): string {
+  const m = date.getMonth()
+  if (m < 3) return 'Q1'
+  if (m < 6) return 'Q2'
+  if (m < 9) return 'Q3'
+  return 'Q4'
+}
+
+export function isQuarterAnchored(date: Date, quarter: string): boolean {
+  const qs = quarterToStartDate(quarter, date.getFullYear())
+  return date.getFullYear() === qs.getFullYear() &&
+    date.getMonth() === qs.getMonth() &&
+    date.getDate() === qs.getDate()
+}
+
+export function quarterFillWidthPx(startDate: Date, view: TimeView): number {
+  const qEnd = endOfQuarter(startDate)
+  const days = differenceInCalendarDays(qEnd, startDate) + 1
+  return days * dayWidthPx(view)
 }

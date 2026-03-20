@@ -33,6 +33,7 @@ export const createActivitySchema = z.object({
     .default(1),
   tags: z.array(tagSchema).max(20).default([]),
   quarter: z.string().max(20).optional(),
+  area: z.string().max(50).optional(),
   planStatus: z.string().max(50).optional(),
   team: z.string().max(100).optional(),
   sizeLabel: z.enum(['S', 'M', 'L', 'XL']).optional(),

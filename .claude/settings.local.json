@@ -21,7 +21,12 @@
       "Bash(npm test:*)",
       "Bash(echo \"Exit: $?\")",
       "WebFetch(domain:v0.app)",
-      "Bash(npm list:*)"
+      "Bash(npm list:*)",
+      "Bash(docker ps:*)",
+      "Bash(choco --version)",
+      "Bash(winget --version)",
+      "Bash(pip3 --version)",
+      "Bash(node -e \":*)"
     ]
   }
 }

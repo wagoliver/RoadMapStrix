@@ -25,7 +25,7 @@ interface RoadmapState {
   updateActivity: (id: string, updates: UpdateActivityInput) => void
   removeActivity: (id: string) => void
 
-  setActivityQuarter: (id: string, quarter: string | null) => void
+  setActivityQuarter: (id: string, quarter: string | null, startDate?: Date | null, rowIndex?: number | null) => void
   scheduleActivity: (id: string, startDate: Date, rowIndex: number) => void
   unscheduleActivity: (id: string) => void
 
@@ -86,11 +86,13 @@ export const useRoadmapStore = create<RoadmapState>()(
         state.activities = state.activities.filter((a) => a.id !== id)
       }),
 
-    setActivityQuarter: (id, quarter) =>
+    setActivityQuarter: (id, quarter, startDate, rowIndex) =>
       set((state) => {
         const idx = state.activities.findIndex((a) => a.id === id)
         if (idx !== -1) {
           state.activities[idx].quarter = quarter
+          if (startDate !== undefined) state.activities[idx].startDate = startDate
+          if (rowIndex !== undefined) state.activities[idx].rowIndex = rowIndex
         }
       }),
 

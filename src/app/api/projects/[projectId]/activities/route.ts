@@ -68,6 +68,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         durationSprints: parsed.data.durationSprints,
         projectId,
         quarter: parsed.data.quarter,
+        area: parsed.data.area,
         planStatus: parsed.data.planStatus ?? 'Backlog',
         team: parsed.data.team,
         sizeLabel: parsed.data.sizeLabel,

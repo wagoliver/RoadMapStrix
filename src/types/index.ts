@@ -28,6 +28,7 @@ export interface Activity {
   updatedAt: Date
   // Planning fields
   quarter?: string | null
+  area?: string | null
   planStatus?: string
   team?: string | null
   sizeLabel?: string | null
@@ -71,6 +72,7 @@ export type CreateActivityInput = {
   durationSprints?: number
   tags?: { name: string; color: string }[]
   quarter?: string
+  area?: string
   planStatus?: string
   team?: string
   sizeLabel?: string
@@ -91,6 +93,7 @@ export type UpdateActivityInput = Partial<{
   deliveryDate: Date | null
   deliveryLabel: string | null
   quarter: string | null
+  area: string | null
   planStatus: string
   team: string | null
   sizeLabel: string | null

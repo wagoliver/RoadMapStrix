@@ -4,7 +4,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Activity, ActivityDependency } from '@/types'
 import { TimeView } from '@/lib/gantt/columnConfig'
-import { dateToPixel, activityWidthPx } from '@/lib/gantt/positionUtils'
+import { dateToPixel, activityWidthPx, isQuarterAnchored, quarterFillWidthPx } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
 import { DeliveryMarker } from './DeliveryMarker'
 import { ROW_HEIGHT } from './GanttGrid'
@@ -51,7 +51,18 @@ export function GanttActivityBlock({
   const chartStart = getChartStartDate()
   const startDate = activity.startDate ? new Date(activity.startDate) : null
   const leftPx = startDate ? dateToPixel(startDate, chartStart, timeView) : 0
-  const widthPx = activityWidthPx(activity.durationSprints, sprintDays, timeView)
+
+  const FILL_VIEWS = ['quarter', 'semester', 'year']
+  const shouldFill =
+    startDate &&
+    activity.quarter &&
+    FILL_VIEWS.includes(timeView) &&
+    isQuarterAnchored(startDate, activity.quarter)
+
+  const widthPx = shouldFill
+    ? quarterFillWidthPx(startDate!, timeView)
+    : activityWidthPx(activity.durationSprints, sprintDays, timeView)
+
   const topPx = (activity.rowIndex ?? 0) * ROW_HEIGHT + BLOCK_PADDING
 
   const dragData: DragData = {

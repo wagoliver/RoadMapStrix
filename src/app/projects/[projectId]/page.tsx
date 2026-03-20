@@ -2,13 +2,20 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRoadmapStore } from '@/store/roadmapStore'
 import { RoadmapView } from '@/components/roadmap/RoadmapView'
 import { PlanningView } from '@/components/planning/PlanningView'
 import { api, type ProjectDetail, type ActivityData } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Loader2, LayoutGrid, ChevronRight } from 'lucide-react'
+import {
+  Calendar,
+  BarChart2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+} from 'lucide-react'
 import type { Project, Activity, ActivityDependency } from '@/types'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
@@ -21,6 +28,7 @@ function toActivity(a: ActivityData): Activity {
     createdAt: new Date(a.createdAt),
     updatedAt: new Date(a.updatedAt),
     quarter: a.quarter,
+    area: a.area,
     planStatus: a.planStatus,
     team: a.team,
     sizeLabel: a.sizeLabel,
@@ -56,22 +64,23 @@ function toProject(p: ProjectDetail): Project {
 function extractDependencies(activities: ActivityData[]): ActivityDependency[] {
   const deps = new Map<string, ActivityDependency>()
   for (const a of activities) {
-    for (const d of a.dependsOn ?? []) {
-      deps.set(d.id, d)
-    }
-    for (const d of a.blockedBy ?? []) {
-      deps.set(d.id, d)
-    }
+    for (const d of a.dependsOn ?? []) deps.set(d.id, d)
+    for (const d of a.blockedBy ?? []) deps.set(d.id, d)
   }
   return Array.from(deps.values())
 }
 
 type ActiveTab = 'planning' | 'gantt'
 
+const NAV_ITEMS = [
+  { key: 'planning' as const, label: 'Planejamento', icon: Calendar },
+  { key: 'gantt' as const, label: 'Gantt', icon: BarChart2 },
+]
+
 export default function ProjectPage() {
   const params = useParams()
   const router = useRouter()
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const projectId = params.projectId as string
 
   const { setProject } = useRoadmapStore()
@@ -79,6 +88,8 @@ export default function ProjectPage() {
   const [dependencies, setDependencies] = useState<ActivityDependency[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<ActiveTab>('planning')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const loadProject = useCallback(async () => {
     try {
@@ -110,7 +121,7 @@ export default function ProjectPage() {
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="w-7 h-7 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">Carregando...</p>
         </div>
       </div>
     )
@@ -118,58 +129,122 @@ export default function ProjectPage() {
 
   if (!project) return null
 
+  const userName = session?.user?.name ?? session?.user?.email ?? 'Usuário'
+  const userInitial = userName[0].toUpperCase()
+
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Top bar */}
-      <div
-        className="flex items-center gap-2 px-4 h-12 border-b flex-shrink-0 z-40 backdrop-blur-md"
+      {/* ── Top header ── */}
+      <header
+        className="h-12 border-b flex items-center px-4 gap-3 flex-shrink-0 z-40"
         style={{ background: 'var(--header-bg)', borderColor: 'var(--header-border)' }}
       >
-        {/* Logo + breadcrumb */}
+        {/* Logo */}
         <button
           onClick={() => router.push('/projects')}
-          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-0 select-none flex-shrink-0 hover:opacity-80 transition-opacity"
         >
-          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-            <LayoutGrid className="w-3 h-3 text-white" />
-          </div>
-          <span className="text-xs font-medium hidden sm:block">Projects</span>
+          <span className="text-sm font-extrabold tracking-tight text-foreground">RoadMap</span>
+          <span className="text-sm font-extrabold tracking-tight text-primary">Strix</span>
         </button>
 
-        <ChevronRight className="w-3.5 h-3.5 text-border flex-shrink-0" />
-
-        <span className="text-sm font-semibold truncate max-w-[200px]">{project.name}</span>
-
-        {/* Divider */}
-        <div className="w-px h-5 bg-border mx-1" />
-
-        {/* Tabs */}
-        <div className="flex gap-0.5 bg-secondary rounded-lg p-0.5">
-          {(['planning', 'gantt'] as const).map((tab) => (
-            <button
-              key={tab}
-              className={`px-3 py-1 rounded-md text-xs font-medium transition-all capitalize ${
-                activeTab === tab
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {tab === 'planning' ? 'Planejamento' : 'Gantt'}
-            </button>
-          ))}
-        </div>
+        {/* Separator + project name */}
+        <div className="w-px h-4 bg-border flex-shrink-0" />
+        <span className="text-sm text-muted-foreground truncate max-w-[220px] font-medium">
+          {project.name}
+        </span>
 
         {/* Spacer */}
         <div className="flex-1" />
 
+        {/* Theme toggle */}
         <ThemeToggle />
-      </div>
 
-      {/* Tab content */}
-      <div className="flex-1 min-h-0">
-        {activeTab === 'planning' && <PlanningView project={project} />}
-        {activeTab === 'gantt' && <RoadmapView project={project} dependencies={dependencies} />}
+        {/* User menu */}
+        <div className="relative">
+          <button
+            className="flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-lg hover:bg-accent transition-colors"
+            onClick={() => setUserMenuOpen((v) => !v)}
+          >
+            {/* Avatar */}
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold flex-shrink-0">
+              {userInitial}
+            </div>
+            <span className="text-sm font-medium hidden sm:block max-w-[130px] truncate leading-none">
+              {userName}
+            </span>
+            <ChevronDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+          </button>
+
+          {userMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+              {/* Dropdown */}
+              <div className="absolute right-0 top-full mt-1.5 w-52 bg-popover border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-border">
+                  <p className="text-xs font-semibold text-foreground truncate">{session?.user?.name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate mt-0.5">{session?.user?.email}</p>
+                </div>
+                <button
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sair
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </header>
+
+      {/* ── Body ── */}
+      <div className="flex flex-1 min-h-0">
+        {/* Left sidebar nav */}
+        <nav
+          className={`flex-shrink-0 border-r border-border flex flex-col transition-all duration-200 ${
+            sidebarCollapsed ? 'w-12' : 'w-44'
+          }`}
+          style={{ background: 'var(--header-bg)', borderColor: 'var(--header-border)' }}
+        >
+          <div className="flex-1 py-2 space-y-0.5">
+            {NAV_ITEMS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors rounded-none ${
+                  activeTab === key
+                    ? 'text-primary bg-primary/10 font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                } ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
+                onClick={() => setActiveTab(key)}
+                title={sidebarCollapsed ? label : undefined}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {!sidebarCollapsed && <span>{label}</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* Collapse toggle */}
+          <button
+            className="flex items-center justify-center w-full h-9 border-t border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronLeft className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </nav>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+          {activeTab === 'planning' && <PlanningView project={project} />}
+          {activeTab === 'gantt' && <RoadmapView project={project} dependencies={dependencies} />}
+        </div>
       </div>
     </div>
   )
