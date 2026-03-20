@@ -13,9 +13,10 @@ interface ActivityCardProps {
   activity: Activity
   onEdit?: (activity: Activity) => void
   onDelete?: (id: string) => void
+  showQuarter?: boolean
 }
 
-export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) {
+export function ActivityCard({ activity, onEdit, onDelete, showQuarter }: ActivityCardProps) {
   const dragData: DragData = {
     source: 'sidebar',
     activityId: activity.id,
@@ -61,6 +62,14 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
           <span className="text-xs text-muted-foreground">
             {activity.durationSprints} sprint{activity.durationSprints !== 1 ? 's' : ''}
           </span>
+          {showQuarter && activity.quarter && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+              style={{ background: `${activity.color}25`, color: activity.color }}
+            >
+              {activity.quarter}
+            </span>
+          )}
           {activity.tags.map((tag) => (
             <Badge
               key={tag.id}

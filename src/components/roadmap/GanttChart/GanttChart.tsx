@@ -1,17 +1,27 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { Activity, ActivityDependency } from '@/types'
-import { TimeView } from '@/lib/gantt/columnConfig'
+import { TIME_VIEWS, TimeView } from '@/lib/gantt/columnConfig'
 import { generateTimeHeader, getChartStartDate, getChartEndDate } from '@/lib/gantt/timeEngine'
-import { dateToPixel } from '@/lib/gantt/positionUtils'
+import { dateToPixel, pixelToDate } from '@/lib/gantt/positionUtils'
 import { GanttHeader } from './GanttHeader'
 import { GanttGrid, ROW_HEIGHT } from './GanttGrid'
 import { GanttRow } from './GanttRow'
 import { GanttActivityBlock } from './GanttActivityBlock'
 import { TodayMarker } from './TodayMarker'
 import { DependencyArrows } from './DependencyArrows'
+import { ZoomIn, ZoomOut } from 'lucide-react'
+
+const VIEW_LABELS: Record<TimeView, string> = {
+  day: 'Dia',
+  week: 'Semana',
+  month: 'Mês',
+  quarter: 'Quarter',
+  semester: 'Semestre',
+  year: 'Ano',
+}
 
 interface GanttChartProps {
   activities: Activity[]
@@ -24,6 +34,7 @@ interface GanttChartProps {
   onAddDependency?: (fromId: string, toId: string) => void
   onRemoveDependency?: (depId: string) => void
   onScrollChange?: (scrollLeft: number) => void
+  onZoom?: (direction: 1 | -1) => void
   scrollContainerRef: React.RefObject<HTMLDivElement>
 }
 
@@ -38,20 +49,30 @@ export function GanttChart({
   onAddDependency,
   onRemoveDependency,
   onScrollChange,
+  onZoom,
   scrollContainerRef,
 }: GanttChartProps) {
   const chartStart = getChartStartDate()
   const chartEnd = getChartEndDate(chartStart)
   const { totalWidthPx } = generateTimeHeader(chartStart, chartEnd, timeView)
 
+  const [containerHeight, setContainerHeight] = useState(600)
+
   const scheduledActivities = activities.filter((a) => a.startDate != null)
   const maxRow = scheduledActivities.reduce((max, a) => Math.max(max, (a.rowIndex ?? 0) + 1), 5)
-  const rowCount = Math.max(maxRow + 2, 10)
+  const minRowsForHeight = Math.ceil(containerHeight / ROW_HEIGHT) + 1
+  const rowCount = Math.max(maxRow + 2, minRowsForHeight, 10)
   const totalHeight = rowCount * ROW_HEIGHT
 
-  const { setNodeRef: setDroppableRef } = useDroppable({
-    id: 'gantt-chart',
-  })
+  const { setNodeRef: setDroppableRef } = useDroppable({ id: 'gantt-chart' })
+
+  // Preserves the date at the viewport center across zoom changes
+  const zoomCenterDateRef = useRef<Date | null>(null)
+
+  // Pan state
+  const isPanningRef = useRef(false)
+  const panStartXRef = useRef(0)
+  const panStartScrollRef = useRef(0)
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -59,21 +80,93 @@ export function GanttChart({
     }
   }
 
+  // Scroll to center date (or today) when timeView changes
   useEffect(() => {
-    if (!scrollContainerRef.current) return
-    const today = new Date()
-    const currentChartStart = getChartStartDate()
-    const leftPx = dateToPixel(today, currentChartStart, timeView)
-    const containerWidth = scrollContainerRef.current.clientWidth
-    scrollContainerRef.current.scrollLeft = Math.max(0, leftPx - containerWidth / 2)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const el = scrollContainerRef.current
+    if (!el) return
+    const current = getChartStartDate()
+    const target = zoomCenterDateRef.current ?? new Date()
+    zoomCenterDateRef.current = null
+    const px = dateToPixel(target, current, timeView)
+    el.scrollLeft = Math.max(0, px - el.clientWidth / 2)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeView])
 
+  // Measure container height to fill grid rows
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerHeight(entry.contentRect.height)
+    })
+    ro.observe(el)
+    setContainerHeight(el.clientHeight)
+    return () => ro.disconnect()
+  }, [scrollContainerRef])
+
+  // Pan + wheel-zoom event listeners
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+
+    const onMouseDown = (e: MouseEvent) => {
+      // Don't pan if clicking on an activity block
+      if ((e.target as Element).closest('[data-activity-block]')) return
+      isPanningRef.current = true
+      panStartXRef.current = e.clientX
+      panStartScrollRef.current = el.scrollLeft
+      el.style.cursor = 'grabbing'
+      el.style.userSelect = 'none'
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isPanningRef.current) return
+      el.scrollLeft = panStartScrollRef.current - (e.clientX - panStartXRef.current)
+    }
+
+    const stopPan = () => {
+      if (!isPanningRef.current) return
+      isPanningRef.current = false
+      el.style.cursor = ''
+      el.style.userSelect = ''
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      // Determine zoom direction: scroll up = zoom in (detail), scroll down = zoom out
+      const direction = e.deltaY > 0 ? 1 : -1
+      // Capture the date under the mouse before zoom
+      const rect = el.getBoundingClientRect()
+      const mouseXInChart = e.clientX - rect.left + el.scrollLeft
+      const current = getChartStartDate()
+      zoomCenterDateRef.current = pixelToDate(mouseXInChart, current, timeView)
+      onZoom?.(direction)
+    }
+
+    el.addEventListener('mousedown', onMouseDown)
+    el.addEventListener('mousemove', onMouseMove)
+    el.addEventListener('mouseup', stopPan)
+    el.addEventListener('mouseleave', stopPan)
+    el.addEventListener('wheel', onWheel, { passive: false })
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown)
+      el.removeEventListener('mousemove', onMouseMove)
+      el.removeEventListener('mouseup', stopPan)
+      el.removeEventListener('mouseleave', stopPan)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [scrollContainerRef, timeView, onZoom])
+
+  const currentViewIdx = TIME_VIEWS.indexOf(timeView)
+  const canZoomIn = currentViewIdx > 0
+  const canZoomOut = currentViewIdx < TIME_VIEWS.length - 1
+
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden relative">
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-auto relative"
+        className="flex-1 overflow-auto relative cursor-grab active:cursor-grabbing"
         onScroll={handleScroll}
       >
         <div style={{ width: totalWidthPx, minHeight: totalHeight + 40 }} className="relative">
@@ -116,6 +209,29 @@ export function GanttChart({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Floating zoom controls */}
+      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1 bg-card/95 border border-border rounded-lg px-1.5 py-1 shadow-lg backdrop-blur-sm">
+        <button
+          className="w-6 h-6 flex items-center justify-center rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          onClick={() => onZoom?.(-1)}
+          disabled={!canZoomIn}
+          title="Mais detalhe"
+        >
+          <ZoomIn className="w-3.5 h-3.5" />
+        </button>
+        <span className="text-[11px] font-semibold text-foreground w-14 text-center tabular-nums">
+          {VIEW_LABELS[timeView]}
+        </span>
+        <button
+          className="w-6 h-6 flex items-center justify-center rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          onClick={() => onZoom?.(1)}
+          disabled={!canZoomOut}
+          title="Menos detalhe"
+        >
+          <ZoomOut className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   )

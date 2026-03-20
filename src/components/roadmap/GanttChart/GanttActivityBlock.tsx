@@ -111,6 +111,7 @@ export function GanttActivityBlock({
           ref={setNodeRef}
           {...listeners}
           {...attributes}
+          data-activity-block="true"
           className={cn(
             'absolute rounded-md cursor-grab active:cursor-grabbing select-none overflow-hidden',
             'flex items-center px-2 text-white text-xs font-medium',
@@ -200,10 +201,9 @@ export function GanttActivityBlock({
 
         <ContextMenuSeparator />
         <ContextMenuItem
-          className="text-destructive focus:text-destructive"
           onClick={() => onDelete?.(activity.id)}
         >
-          Delete
+          Mover para Lista de Desejos
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

@@ -50,7 +50,7 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
   const [dependencies, setDependencies] = useState<ActivityDependency[]>(initialDeps)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const { changeView } = useTimeView()
+  const { changeView, cycleView } = useTimeView()
 
   const handleViewChange = (view: TimeView) => {
     changeView(view, scrollContainerRef as React.RefObject<HTMLElement>)
@@ -192,11 +192,15 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
 
   const handleDeleteActivity = async (activityId: string) => {
     try {
-      await api.activities.delete(project.id, activityId)
-      removeActivity(activityId)
-      toast.success('Activity deleted')
+      await api.activities.update(project.id, activityId, {
+        quarter: 'wishlist',
+        startDate: null,
+        rowIndex: null,
+      })
+      updateActivity(activityId, { quarter: 'wishlist', startDate: null, rowIndex: null })
+      toast.success('Card movido para Lista de Desejos')
     } catch {
-      toast.error('Failed to delete activity')
+      toast.error('Falha ao mover card')
     }
   }
 
@@ -260,7 +264,11 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     }
   }
 
-  const unscheduled = getUnscheduledActivities()
+  const QUARTER_KEYS = ['Q1', 'Q2', 'Q3', 'Q4']
+  const ganttActivities = activities.filter(
+    (a) => a.quarter && QUARTER_KEYS.includes(a.quarter)
+  )
+  const wishlistActivities = activities.filter((a) => a.quarter === 'wishlist')
   const allActivitiesFiltered = getFilteredActivities()
   const scheduledFiltered = allActivitiesFiltered.filter((a) => a.startDate != null)
 
@@ -291,8 +299,8 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
 
         <div className="flex flex-1 overflow-hidden">
           <ActivitySidebar
-            activities={unscheduled}
-            allTags={allTags}
+            ganttActivities={ganttActivities}
+            wishlistActivities={wishlistActivities}
             onCreateActivity={handleCreateActivity}
             onEditActivity={(a) => setEditActivity(a)}
             onDeleteActivity={handleDeleteActivity}
@@ -310,6 +318,7 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
               onAddDependency={handleAddDependency}
               onRemoveDependency={handleRemoveDependency}
               onScrollChange={setScrollLeft}
+              onZoom={(dir) => cycleView(dir)}
               scrollContainerRef={scrollContainerRef}
             />
           </div>
