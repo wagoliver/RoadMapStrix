@@ -1,13 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { useRoadmapStore } from '@/store/roadmapStore'
 import { Activity } from '@/types'
 import { AREA_COLORS, TEAM_COLORS } from '@/components/planning/EditActivityDialog'
 import { FilterDropdown } from '@/components/ui/FilterDropdown'
 import { useActivityFilters, STATUS_OPTIONS, AREA_OPTIONS, TEAM_OPTIONS, SIZE_OPTIONS } from '@/hooks/useActivityFilters'
-import { Search, X, SlidersHorizontal } from 'lucide-react'
+import { Search, X, SlidersHorizontal, Layers, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { api, FeatureGroupData } from '@/lib/api-client'
+import { toast } from 'sonner'
 
 const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4', 'wishlist'] as const
 type Quarter = typeof QUARTERS[number]
@@ -117,17 +119,116 @@ function StatusBar({ activities }: { activities: Activity[] }) {
   )
 }
 
+// ─── Group picker (inline dropdown on card) ──────────────────────────────────
+
+function GroupPicker({
+  activity,
+  groups,
+  linkedGroupIds,
+  projectId,
+  onToggle,
+  onClose,
+}: {
+  activity: Activity
+  groups: FeatureGroupData[]
+  linkedGroupIds: Set<string>
+  projectId: string
+  onToggle: (groupId: string, linked: boolean) => Promise<void>
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [loading, setLoading] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  if (groups.length === 0) {
+    return (
+      <div
+        ref={ref}
+        className="absolute right-0 top-full mt-1 z-50 bg-popover border border-border rounded-xl shadow-2xl w-52 p-3"
+      >
+        <p className="text-[10px] text-muted-foreground text-center py-2">
+          Nenhum grupo criado no Storyboard
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-1 z-50 bg-popover border border-border rounded-xl shadow-2xl w-56 overflow-hidden"
+    >
+      <div className="px-3 py-2 border-b border-border">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Grupos do Storyboard</span>
+      </div>
+      <div className="py-1 max-h-52 overflow-y-auto">
+        {groups.map((g) => {
+          const isLinked = linkedGroupIds.has(g.id)
+          const isLoading = loading === g.id
+          return (
+            <button
+              key={g.id}
+              disabled={isLoading}
+              onClick={async () => {
+                setLoading(g.id)
+                await onToggle(g.id, isLinked)
+                setLoading(null)
+              }}
+              className={cn(
+                'w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-accent transition-colors',
+                isLinked && 'bg-primary/5'
+              )}
+            >
+              <div className={cn(
+                'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors',
+                isLinked ? 'border-primary bg-primary' : 'border-border'
+              )}>
+                {isLinked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+              </div>
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: g.color }} />
+              <span className="text-xs text-foreground truncate flex-1">{g.title}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Activity card ───────────────────────────────────────────────────────────
 
-function ActivityCard({ activity }: { activity: Activity }) {
+function ActivityCard({
+  activity,
+  groups,
+  activityGroupMap,
+  projectId,
+  onGroupToggle,
+}: {
+  activity: Activity
+  groups: FeatureGroupData[]
+  activityGroupMap: Map<string, Set<string>>
+  projectId: string
+  onGroupToggle: (groupId: string, activityId: string, linked: boolean) => Promise<void>
+}) {
+  const [showPicker, setShowPicker] = useState(false)
   const statusColor = STATUS_COLOR[activity.planStatus ?? 'Backlog'] ?? '#8b8fa3'
   const areaColor   = AREA_COLORS[activity.area ?? '']   ?? '#6366f1'
   const teamColor   = TEAM_COLORS[activity.team ?? '']   ?? '#94a3b8'
   const sizeColor   = SIZE_COLOR[activity.sizeLabel ?? ''] ?? '#94a3b8'
 
+  const linkedGroupIds = activityGroupMap.get(activity.id) ?? new Set<string>()
+  const linkedGroups   = groups.filter((g) => linkedGroupIds.has(g.id))
+
   return (
     <div
-      className="group relative border border-border rounded-xl p-3 flex flex-col gap-2.5
+      className="group/card relative border border-border rounded-xl p-3 flex flex-col gap-2.5
                  hover:border-primary/25 hover:shadow-md hover:-translate-y-px transition-all duration-150 cursor-default"
       style={{ background: areaColor + '0a' }}
     >
@@ -158,7 +259,7 @@ function ActivityCard({ activity }: { activity: Activity }) {
       </div>
 
       {/* Name */}
-      <p className="text-xs font-semibold leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+      <p className="text-xs font-semibold leading-snug line-clamp-2 text-foreground group-hover/card:text-primary transition-colors">
         {activity.name}
       </p>
 
@@ -196,13 +297,65 @@ function ActivityCard({ activity }: { activity: Activity }) {
           </span>
         )}
       </div>
+
+      {/* Linked group badges + picker button */}
+      <div className="flex items-center gap-1 flex-wrap border-t border-dashed border-border/50 pt-1.5">
+        {linkedGroups.map((g) => (
+          <span
+            key={g.id}
+            className="flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+            style={{ background: g.color + '18', color: g.color }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: g.color }} />
+            {g.title}
+          </span>
+        ))}
+        <div className="relative ml-auto">
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowPicker((v) => !v) }}
+            className={cn(
+              'w-5 h-5 rounded flex items-center justify-center transition-colors',
+              linkedGroups.length > 0
+                ? 'text-primary/70 hover:text-primary hover:bg-primary/10'
+                : 'opacity-0 group-hover/card:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10'
+            )}
+            title="Associar a grupo do Storyboard"
+          >
+            <Layers className="w-3 h-3" />
+          </button>
+          {showPicker && (
+            <GroupPicker
+              activity={activity}
+              groups={groups}
+              linkedGroupIds={linkedGroupIds}
+              projectId={projectId}
+              onToggle={(groupId, linked) => onGroupToggle(groupId, activity.id, linked)}
+              onClose={() => setShowPicker(false)}
+            />
+          )}
+        </div>
+      </div>
     </div>
   )
 }
 
 // ─── Quarter column ──────────────────────────────────────────────────────────
 
-function QuarterColumn({ quarter, activities }: { quarter: Quarter; activities: Activity[] }) {
+function QuarterColumn({
+  quarter,
+  activities,
+  groups,
+  activityGroupMap,
+  projectId,
+  onGroupToggle,
+}: {
+  quarter: Quarter
+  activities: Activity[]
+  groups: FeatureGroupData[]
+  activityGroupMap: Map<string, Set<string>>
+  projectId: string
+  onGroupToggle: (groupId: string, activityId: string, linked: boolean) => Promise<void>
+}) {
   const { label, period, color, gradient } = QUARTER_META[quarter]
   const totalSprints = activities.reduce((s, a) => s + a.durationSprints, 0)
   const doneCount    = activities.filter((a) => a.planStatus === 'Concluído').length
@@ -250,7 +403,16 @@ function QuarterColumn({ quarter, activities }: { quarter: Quarter; activities: 
             <p className="text-xs text-muted-foreground">Nenhum card</p>
           </div>
         ) : (
-          activities.map((a) => <ActivityCard key={a.id} activity={a} />)
+          activities.map((a) => (
+            <ActivityCard
+              key={a.id}
+              activity={a}
+              groups={groups}
+              activityGroupMap={activityGroupMap}
+              projectId={projectId}
+              onGroupToggle={onGroupToggle}
+            />
+          ))
         )}
       </div>
     </div>
@@ -260,8 +422,42 @@ function QuarterColumn({ quarter, activities }: { quarter: Quarter; activities: 
 // ─── Main view ───────────────────────────────────────────────────────────────
 
 export function QuarterView() {
-  const { activities } = useRoadmapStore()
+  const { activities, project } = useRoadmapStore()
+  const projectId = project?.id ?? ''
   const [filterOpen, setFilterOpen] = useState(false)
+  const [groups, setGroups] = useState<FeatureGroupData[]>([])
+
+  useEffect(() => {
+    if (!projectId) return
+    api.featureGroups.list(projectId).then(setGroups).catch(() => {})
+  }, [projectId])
+
+  // Map: activityId → Set<groupId>
+  const activityGroupMap = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    groups.forEach((g) => {
+      g.activities.forEach((la) => {
+        if (!map.has(la.activity.id)) map.set(la.activity.id, new Set())
+        map.get(la.activity.id)!.add(g.id)
+      })
+    })
+    return map
+  }, [groups])
+
+  const handleGroupToggle = useCallback(async (groupId: string, activityId: string, linked: boolean) => {
+    if (linked) {
+      await api.featureGroups.removeActivity(projectId, groupId, activityId)
+      setGroups((prev) => prev.map((g) =>
+        g.id === groupId
+          ? { ...g, activities: g.activities.filter((la) => la.activity.id !== activityId) }
+          : g
+      ))
+    } else {
+      await api.featureGroups.addActivity(projectId, groupId, activityId)
+      const updated = await api.featureGroups.list(projectId)
+      setGroups(updated)
+    }
+  }, [projectId])
 
   const {
     filterSearch, setFilterSearch,
@@ -354,7 +550,15 @@ export function QuarterView() {
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex gap-4 p-5 h-full">
           {QUARTERS.map((q) => (
-            <QuarterColumn key={q} quarter={q} activities={byQuarter[q]} />
+            <QuarterColumn
+              key={q}
+              quarter={q}
+              activities={byQuarter[q]}
+              groups={groups}
+              activityGroupMap={activityGroupMap}
+              projectId={projectId}
+              onGroupToggle={handleGroupToggle}
+            />
           ))}
         </div>
       </div>

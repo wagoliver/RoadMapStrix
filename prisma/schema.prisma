@@ -140,12 +140,15 @@ model FeatureGroup {
   projectId   String
   title       String                @default("Novo Grupo")
   description String?               @db.Text
-  color       String                @default("#6366f1")
-  x           Int                   @default(40)
-  y           Int                   @default(40)
-  width       Int                   @default(420)
-  height      Int                   @default(320)
-  createdAt   DateTime              @default(now())
+  color           String                @default("#6366f1")
+  x               Int                   @default(40)
+  y               Int                   @default(40)
+  width           Int                   @default(420)
+  height          Int                   @default(320)
+  backgroundImage String?               @db.Text
+  elements        Json?
+  locked          Boolean               @default(false)
+  createdAt       DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
   project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
   activities  FeatureGroupActivity[]

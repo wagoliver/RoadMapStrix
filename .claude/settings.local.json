@@ -34,7 +34,8 @@
       "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups\")",
       "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups/[groupId]\")",
       "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups/[groupId]/activities\")",
-      "Bash(D:/RoadMapStrix/src/lib/api-client.ts:*)"
+      "Bash(D:/RoadMapStrix/src/lib/api-client.ts:*)",
+      "Bash(DATABASE_URL=\"postgresql://roadmap:roadmap@localhost:5432/roadmapstrix\" npx prisma generate)"
     ]
   }
 }

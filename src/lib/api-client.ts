@@ -237,6 +237,9 @@ export interface FeatureGroupData {
   y: number
   width: number
   height: number
+  backgroundImage: string | null
+  elements: unknown | null
+  locked: boolean
   createdAt: string
   updatedAt: string
   activities: {

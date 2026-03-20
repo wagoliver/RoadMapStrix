@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useId } from 'react'
 import { useRoadmapStore } from '@/store/roadmapStore'
 import { Activity } from '@/types'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Plus, Trash2, X, Search, Check } from 'lucide-react'
+import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock } from 'lucide-react'
 import { AREA_COLORS } from '@/components/planning/EditActivityDialog'
 import { cn } from '@/lib/utils'
+import { ElementWrapper, TextElementComp, ImageElementComp } from './CanvasElements'
+import type { CanvasElement } from './canvasTypes'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -30,12 +32,13 @@ interface FeatureGroup {
   id: string
   projectId: string
   title: string
-  description: string | null
   color: string
   x: number
   y: number
   width: number
   height: number
+  elements: CanvasElement[]
+  locked: boolean
   activities: LinkedActivity[]
 }
 
@@ -55,6 +58,10 @@ const GROUP_COLORS = [
 const STATUS_COLOR: Record<string, string> = {
   'Backlog': '#8b8fa3', 'Planejado': '#06b6d4', 'Em Andamento': '#818cf8',
   'Em Review': '#eab308', 'Em Produção': '#16a34a', 'Concluído': '#4ade80',
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10)
 }
 
 // ─── Activity Picker ──────────────────────────────────────────────────────────
@@ -97,15 +104,12 @@ function ActivityPicker({
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-xl">
       <div className="bg-popover border border-border rounded-xl shadow-2xl w-80 flex flex-col overflow-hidden max-h-[70%]">
-        {/* Header */}
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-border flex-shrink-0">
           <span className="text-xs font-semibold">Vincular cards</span>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-
-        {/* Search */}
         <div className="px-3 py-2 border-b border-border flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
@@ -118,8 +122,6 @@ function ActivityPicker({
             />
           </div>
         </div>
-
-        {/* List */}
         <div className="overflow-y-auto flex-1 py-1">
           {filtered.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum card encontrado</p>
@@ -138,14 +140,12 @@ function ActivityPicker({
                   isLinked && 'bg-primary/5'
                 )}
               >
-                {/* Checkbox */}
                 <div className={cn(
                   'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors',
                   isLinked ? 'bg-primary border-primary' : 'border-border'
                 )}>
                   {isLinked && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     {a.jiraRef && (
@@ -166,7 +166,6 @@ function ActivityPicker({
             )
           })}
         </div>
-
         <div className="px-3 py-2 border-t border-border flex-shrink-0">
           <p className="text-[10px] text-muted-foreground">{linkedIds.size} card(s) vinculado(s)</p>
         </div>
@@ -175,7 +174,7 @@ function ActivityPicker({
   )
 }
 
-// ─── Feature Group Tile ───────────────────────────────────────────────────────
+// ─── Group Tile ───────────────────────────────────────────────────────────────
 
 function GroupTile({
   group,
@@ -192,13 +191,13 @@ function GroupTile({
 }) {
   const [showPicker, setShowPicker] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
-  const [editingDesc, setEditingDesc] = useState(false)
   const [titleVal, setTitleVal] = useState(group.title)
-  const [descVal, setDescVal] = useState(group.description ?? '')
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
-  const dragRef = useRef({ active: false, startX: 0, startY: 0, origX: 0, origY: 0 })
-  const resizeRef = useRef({ active: false, startX: 0, startY: 0, origW: 0, origH: 0 })
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const groupDragRef = useRef({ active: false, startX: 0, startY: 0, origX: 0, origY: 0 })
+  const resizeRef    = useRef({ active: false, startX: 0, startY: 0, origW: 0, origH: 0 })
+  const saveTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const scheduleSave = useCallback((patch: Partial<FeatureGroup>) => {
     onUpdate(group.id, patch)
@@ -208,64 +207,118 @@ function GroupTile({
     }, 600)
   }, [group.id, projectId, onUpdate])
 
-  // ── Drag to move ──
-  const onDragStart = (e: React.MouseEvent) => {
+  // ── Group drag to move ──
+  const onGroupDragStart = (e: React.MouseEvent) => {
+    if (group.locked) return
     if ((e.target as Element).closest('[data-no-drag]')) return
     e.preventDefault()
-    dragRef.current = { active: true, startX: e.clientX, startY: e.clientY, origX: group.x, origY: group.y }
-
+    groupDragRef.current = { active: true, startX: e.clientX, startY: e.clientY, origX: group.x, origY: group.y }
     const onMove = (ev: MouseEvent) => {
-      if (!dragRef.current.active) return
-      const dx = ev.clientX - dragRef.current.startX
-      const dy = ev.clientY - dragRef.current.startY
-      const nx = Math.max(0, dragRef.current.origX + dx)
-      const ny = Math.max(0, dragRef.current.origY + dy)
-      onUpdate(group.id, { x: nx, y: ny })
+      if (!groupDragRef.current.active) return
+      onUpdate(group.id, {
+        x: Math.max(0, groupDragRef.current.origX + ev.clientX - groupDragRef.current.startX),
+        y: Math.max(0, groupDragRef.current.origY + ev.clientY - groupDragRef.current.startY),
+      })
     }
     const onUp = (ev: MouseEvent) => {
-      if (!dragRef.current.active) return
-      dragRef.current.active = false
+      if (!groupDragRef.current.active) return
+      groupDragRef.current.active = false
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
-      const dx = ev.clientX - dragRef.current.startX
-      const dy = ev.clientY - dragRef.current.startY
+      const dx = ev.clientX - groupDragRef.current.startX
+      const dy = ev.clientY - groupDragRef.current.startY
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-        const nx = Math.max(0, dragRef.current.origX + dx)
-        const ny = Math.max(0, dragRef.current.origY + dy)
-        api.featureGroups.update(projectId, group.id, { x: nx, y: ny }).catch(() => {})
+        api.featureGroups.update(projectId, group.id, {
+          x: Math.max(0, groupDragRef.current.origX + dx),
+          y: Math.max(0, groupDragRef.current.origY + dy),
+        }).catch(() => {})
       }
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }
 
-  // ── Resize ──
-  const onResizeStart = (e: React.MouseEvent) => {
+  // ── Group resize ──
+  const onGroupResizeStart = (e: React.MouseEvent) => {
+    if (group.locked) return
     e.preventDefault()
     e.stopPropagation()
     resizeRef.current = { active: true, startX: e.clientX, startY: e.clientY, origW: group.width, origH: group.height }
-
     const onMove = (ev: MouseEvent) => {
       if (!resizeRef.current.active) return
-      const nw = Math.max(MIN_W, resizeRef.current.origW + ev.clientX - resizeRef.current.startX)
-      const nh = Math.max(MIN_H, resizeRef.current.origH + ev.clientY - resizeRef.current.startY)
-      onUpdate(group.id, { width: nw, height: nh })
+      onUpdate(group.id, {
+        width:  Math.max(MIN_W, resizeRef.current.origW + ev.clientX - resizeRef.current.startX),
+        height: Math.max(MIN_H, resizeRef.current.origH + ev.clientY - resizeRef.current.startY),
+      })
     }
     const onUp = (ev: MouseEvent) => {
       if (!resizeRef.current.active) return
       resizeRef.current.active = false
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
-      const nw = Math.max(MIN_W, resizeRef.current.origW + ev.clientX - resizeRef.current.startX)
-      const nh = Math.max(MIN_H, resizeRef.current.origH + ev.clientY - resizeRef.current.startY)
-      api.featureGroups.update(projectId, group.id, { width: nw, height: nh }).catch(() => {})
+      api.featureGroups.update(projectId, group.id, {
+        width:  Math.max(MIN_W, resizeRef.current.origW + ev.clientX - resizeRef.current.startX),
+        height: Math.max(MIN_H, resizeRef.current.origH + ev.clientY - resizeRef.current.startY),
+      }).catch(() => {})
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }
 
+  // ── Element helpers ──
+  const updateElement = useCallback((elId: string, patch: Partial<CanvasElement>) => {
+    const next = group.elements.map((el) => el.id === elId ? { ...el, ...patch } : el)
+    scheduleSave({ elements: next })
+  }, [group.elements, scheduleSave])
+
+  const deleteElement = useCallback((elId: string) => {
+    const next = group.elements.filter((el) => el.id !== elId)
+    scheduleSave({ elements: next })
+    setSelectedElementId(null)
+  }, [group.elements, scheduleSave])
+
+  const addTextElement = () => {
+    const offset = group.elements.length * 20
+    const el: CanvasElement = {
+      id: uid(), type: 'text',
+      x: 20 + offset, y: 20 + offset,
+      width: 220, height: 100,
+      content: '<p>Texto</p>',
+    }
+    const next = [...group.elements, el]
+    scheduleSave({ elements: next })
+    setSelectedElementId(el.id)
+  }
+
+  const addImageElement = (src: string) => {
+    const offset = group.elements.length * 20
+    const el: CanvasElement = {
+      id: uid(), type: 'image',
+      x: 20 + offset, y: 20 + offset,
+      width: 200, height: 150,
+      src, objectFit: 'cover',
+    }
+    const next = [...group.elements, el]
+    scheduleSave({ elements: next })
+    setSelectedElementId(el.id)
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const src = ev.target?.result as string
+      if (src) addImageElement(src)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const totalSprints = group.activities.reduce((s, la) => s + la.activity.durationSprints, 0)
-  const quarters = Array.from(new Set(group.activities.map((la) => la.activity.quarter).filter(Boolean))).sort()
+  const quarters     = Array.from(new Set(group.activities.map((la) => la.activity.quarter).filter(Boolean))).sort()
 
   return (
     <div
@@ -276,14 +329,13 @@ function GroupTile({
         className="w-full h-full rounded-2xl border border-border bg-card/95 backdrop-blur-sm shadow-xl flex flex-col overflow-hidden"
         style={{ borderTop: `3px solid ${group.color}` }}
       >
-        {/* Header — drag handle */}
+        {/* ── Header ── */}
         <div
-          className="flex items-start gap-2 px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing flex-shrink-0"
-          onMouseDown={onDragStart}
-          style={{ background: group.color + '10' }}
+          className={cn('flex items-center gap-2 px-3 py-2 flex-shrink-0', group.locked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
+          style={{ background: group.color + '12' }}
+          onMouseDown={onGroupDragStart}
         >
-          {/* Color dot */}
-          <div className="w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0" style={{ background: group.color }} />
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: group.color }} />
 
           {/* Title */}
           <div className="flex-1 min-w-0" data-no-drag>
@@ -298,7 +350,7 @@ function GroupTile({
               />
             ) : (
               <h3
-                className="text-sm font-bold leading-snug cursor-text hover:text-primary transition-colors line-clamp-2"
+                className="text-sm font-bold truncate cursor-text hover:text-primary transition-colors"
                 onDoubleClick={() => setEditingTitle(true)}
                 title="Duplo clique para editar"
               >
@@ -308,107 +360,163 @@ function GroupTile({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1 flex-shrink-0" data-no-drag>
-            <button
-              onClick={() => setShowPicker(true)}
-              className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-              title="Vincular cards"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onDelete(group.id)}
-              className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              title="Excluir grupo"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="px-4 pb-2 flex-shrink-0" data-no-drag>
-          {editingDesc ? (
-            <textarea
-              autoFocus
-              rows={3}
-              className="w-full bg-transparent text-xs text-muted-foreground outline-none border border-border/50 rounded-lg p-1.5 resize-none focus:border-primary/40"
-              value={descVal}
-              onChange={(e) => setDescVal(e.target.value)}
-              onBlur={() => { setEditingDesc(false); scheduleSave({ description: descVal || null }) }}
-            />
-          ) : (
-            <p
-              className={cn(
-                'text-xs leading-relaxed cursor-text',
-                group.description ? 'text-muted-foreground' : 'text-muted-foreground/40 italic'
-              )}
-              onDoubleClick={() => setEditingDesc(true)}
-              title="Duplo clique para editar"
-            >
-              {group.description || 'Duplo clique para adicionar descrição...'}
-            </p>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="mx-4 border-t border-dashed border-border/60 flex-shrink-0" />
-
-        {/* Linked activity chips */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-wrap gap-1.5 content-start" data-no-drag>
-          {group.activities.length === 0 ? (
-            <p className="text-[10px] text-muted-foreground/50 italic w-full text-center pt-3">
-              Clique em + para vincular cards
-            </p>
-          ) : (
-            group.activities.map((la) => {
-              const a = la.activity
-              const statusColor = STATUS_COLOR[a.planStatus] ?? '#8b8fa3'
-              const areaColor = AREA_COLORS[a.area ?? ''] ?? '#6366f1'
-              return (
-                <div
-                  key={la.id}
-                  className="group/chip flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border bg-background hover:border-primary/30 transition-colors"
+          <div className="flex items-center gap-0.5 flex-shrink-0" data-no-drag>
+            {!group.locked && (
+              <>
+                {/* Add text */}
+                <button
+                  onClick={addTextElement}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Adicionar texto"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusColor }} />
-                  {a.jiraRef && (
-                    <span className="text-[10px] font-mono font-bold text-muted-foreground/60 flex-shrink-0">{a.jiraRef}</span>
-                  )}
-                  <span
-                    className="text-[10px] font-semibold flex-shrink-0 px-1 rounded"
-                    style={{ background: areaColor + '18', color: areaColor }}
-                  >
-                    {a.quarter}
-                  </span>
-                  <span className="text-[10px] max-w-[140px] truncate text-foreground">{a.name}</span>
-                  <button
-                    onClick={() => onActivityToggle(group.id, a.id, true)}
-                    className="ml-0.5 opacity-0 group-hover/chip:opacity-100 text-muted-foreground hover:text-destructive transition-all flex-shrink-0"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                </div>
-              )
-            })
-          )}
+                  <Type className="w-3.5 h-3.5" />
+                </button>
+                {/* Add image */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Adicionar imagem"
+                >
+                  <Image className="w-3.5 h-3.5" />
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                {/* Link activities */}
+                <button
+                  onClick={() => setShowPicker(true)}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Vincular cards"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+
+            {/* Lock / unlock */}
+            <button
+              onClick={() => scheduleSave({ locked: !group.locked })}
+              className={cn(
+                'w-6 h-6 rounded flex items-center justify-center transition-colors',
+                group.locked
+                  ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
+                  : 'text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10'
+              )}
+              title={group.locked ? 'Desbloquear grupo' : 'Travar grupo'}
+            >
+              {group.locked
+                ? <Lock className="w-3.5 h-3.5" />
+                : <Unlock className="w-3.5 h-3.5" />
+              }
+            </button>
+
+            {/* Delete group — hidden when locked */}
+            {!group.locked && (
+              <button
+                onClick={() => onDelete(group.id)}
+                className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                title="Excluir grupo"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Footer meta */}
+        {/* ── Free canvas area ── */}
+        <div
+          ref={canvasRef}
+          className="flex-1 relative overflow-hidden min-h-0"
+          style={{ background: 'transparent' }}
+          onClick={() => setSelectedElementId(null)}
+        >
+          {group.elements.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 pointer-events-none opacity-25">
+              <div className="flex gap-2">
+                <Type className="w-4 h-4" />
+                <Image className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] text-muted-foreground">Use T e 📷 para adicionar conteúdo</p>
+            </div>
+          )}
+
+          {group.elements.map((el) => (
+            <ElementWrapper
+              key={el.id}
+              element={el}
+              selected={selectedElementId === el.id}
+              locked={group.locked}
+              canvasRef={canvasRef}
+              onSelect={() => setSelectedElementId(el.id)}
+              onDeselect={() => setSelectedElementId(null)}
+              onUpdate={(patch) => updateElement(el.id, patch)}
+              onDelete={() => deleteElement(el.id)}
+            >
+              {el.type === 'text' ? (
+                <TextElementComp
+                  element={el}
+                  selected={selectedElementId === el.id}
+                  onUpdate={(patch) => updateElement(el.id, patch)}
+                />
+              ) : (
+                <ImageElementComp
+                  element={el}
+                  selected={selectedElementId === el.id}
+                  onUpdate={(patch) => updateElement(el.id, patch)}
+                />
+              )}
+            </ElementWrapper>
+          ))}
+        </div>
+
+        {/* ── Activities footer ── */}
         {group.activities.length > 0 && (
-          <div className="px-4 py-2 border-t border-border/60 flex items-center gap-2 flex-shrink-0 flex-wrap">
-            {quarters.map((q) => (
-              <span key={q} className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{q}</span>
-            ))}
-            <span className="text-[10px] text-muted-foreground ml-auto">
-              {group.activities.length} cards · {totalSprints} sprints
-            </span>
-          </div>
+          <>
+            <div className="mx-3 border-t border-dashed border-border/60 flex-shrink-0" />
+            <div className="px-3 py-2 flex flex-wrap gap-1.5 content-start flex-shrink-0 max-h-28 overflow-y-auto" data-no-drag>
+              {group.activities.map((la) => {
+                const a = la.activity
+                const statusColor = STATUS_COLOR[a.planStatus] ?? '#8b8fa3'
+                const areaColor   = AREA_COLORS[a.area ?? ''] ?? '#6366f1'
+                return (
+                  <div
+                    key={la.id}
+                    className="group/chip flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border bg-background hover:border-primary/30 transition-colors"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusColor }} />
+                    {a.jiraRef && (
+                      <span className="text-[10px] font-mono font-bold text-muted-foreground/60">{a.jiraRef}</span>
+                    )}
+                    <span
+                      className="text-[10px] font-semibold px-1 rounded"
+                      style={{ background: areaColor + '18', color: areaColor }}
+                    >
+                      {a.quarter}
+                    </span>
+                    <span className="text-[10px] max-w-[120px] truncate">{a.name}</span>
+                    <button
+                      onClick={() => onActivityToggle(group.id, a.id, true)}
+                      className="ml-0.5 opacity-0 group-hover/chip:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="px-3 pb-2 flex items-center gap-2 flex-shrink-0 flex-wrap" data-no-drag>
+              {quarters.map((q) => (
+                <span key={q} className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{q}</span>
+              ))}
+              <span className="text-[10px] text-muted-foreground ml-auto">
+                {group.activities.length} cards · {totalSprints} sprints
+              </span>
+            </div>
+          </>
         )}
 
-        {/* Resize handle */}
+        {/* ── Group resize handle ── */}
         <div
           className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end pr-1 pb-1 opacity-30 hover:opacity-70 transition-opacity"
-          onMouseDown={onResizeStart}
+          onMouseDown={onGroupResizeStart}
         >
           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" className="text-muted-foreground">
             <path d="M8 0L8 8L0 8Z" />
@@ -416,7 +524,7 @@ function GroupTile({
         </div>
       </div>
 
-      {/* Activity Picker overlay */}
+      {/* Activity picker overlay */}
       {showPicker && (
         <ActivityPicker
           group={group}
@@ -439,23 +547,22 @@ export function StoryboardView({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     api.featureGroups.list(projectId)
-      .then(setGroups)
+      .then((data) => setGroups(data.map((g) => ({
+        ...g,
+        elements: (g.elements as CanvasElement[] | null) ?? [],
+        locked: g.locked ?? false,
+      }))))
       .catch(() => toast.error('Erro ao carregar storyboard'))
       .finally(() => setLoading(false))
   }, [projectId])
 
   const handleCreate = async () => {
-    const color = GROUP_COLORS[colorIdx.current % GROUP_COLORS.length]
+    const color  = GROUP_COLORS[colorIdx.current % GROUP_COLORS.length]
     colorIdx.current++
-    // Offset each new group so they don't stack
     const offset = groups.length * 30
     try {
-      const group = await api.featureGroups.create(projectId, {
-        color,
-        x: 40 + offset,
-        y: 40 + offset,
-      })
-      setGroups((prev) => [...prev, group])
+      const g = await api.featureGroups.create(projectId, { color, x: 40 + offset, y: 40 + offset })
+      setGroups((prev) => [...prev, { ...g, elements: [], locked: false }])
     } catch {
       toast.error('Erro ao criar grupo')
     }
@@ -480,9 +587,8 @@ export function StoryboardView({ projectId }: { projectId: string }) {
       ))
     } else {
       await api.featureGroups.addActivity(projectId, groupId, activityId)
-      // Reload group to get full activity data
       const updated = await api.featureGroups.list(projectId)
-      setGroups(updated)
+      setGroups(updated.map((g) => ({ ...g, elements: (g.elements as CanvasElement[] | null) ?? [], locked: g.locked ?? false })))
     }
   }, [projectId])
 
@@ -513,7 +619,6 @@ export function StoryboardView({ projectId }: { projectId: string }) {
 
       {/* Canvas */}
       <div className="flex-1 overflow-auto bg-muted/30">
-        {/* Dot grid background */}
         <div
           className="relative"
           style={{
