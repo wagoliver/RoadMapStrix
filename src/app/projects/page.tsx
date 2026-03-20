@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, LayoutGrid, Calendar, Trash2, LogOut, Loader2, Users, LayoutList, ChevronRight } from 'lucide-react'
+import { Plus, LayoutGrid, Calendar, Trash2, LogOut, Loader2, Users, LayoutList, ChevronRight, Settings } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { api, type ProjectListItem } from '@/lib/api-client'
@@ -129,6 +129,13 @@ export default function ProjectsPage() {
           {/* Right side */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <button
+              onClick={() => router.push('/settings')}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Configurações"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
             <div className="w-px h-5 bg-border mx-1" />
             {/* User avatar */}
             <div className="flex items-center gap-2.5">
