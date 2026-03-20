@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -10,7 +10,7 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { Activity, Project, CreateActivityInput } from '@/types'
+import { Activity, Project, CreateActivityInput, ActivityDependency } from '@/types'
 import { useRoadmapStore } from '@/store/roadmapStore'
 import { useTimeView } from '@/hooks/useTimeView'
 import { GanttChart } from './GanttChart/GanttChart'
@@ -21,15 +21,16 @@ import { MarkDeliveredDialog } from './ActivitySidebar/MarkDeliveredDialog'
 import { TimeView } from '@/lib/gantt/columnConfig'
 import { dateToPixel, activityWidthPx, pixelToDate, snapDateToView } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
-import { generateId } from '@/lib/generateId'
-import { DEFAULT_ACTIVITY_COLOR } from '@/lib/constants'
+import { api } from '@/lib/api-client'
+import { toast } from 'sonner'
 import type { DragData } from '@/hooks/useDragActivity'
 
 interface RoadmapViewProps {
   project: Project
+  dependencies?: ActivityDependency[]
 }
 
-export function RoadmapView({ project }: RoadmapViewProps) {
+export function RoadmapView({ project, dependencies: initialDeps = [] }: RoadmapViewProps) {
   const {
     activities,
     addActivity,
@@ -46,6 +47,7 @@ export function RoadmapView({ project }: RoadmapViewProps) {
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
   const [deliveredActivity, setDeliveredActivity] = useState<Activity | null>(null)
   const [activeDragData, setActiveDragData] = useState<DragData | null>(null)
+  const [dependencies, setDependencies] = useState<ActivityDependency[]>(initialDeps)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const { changeView } = useTimeView()
@@ -73,6 +75,17 @@ export function RoadmapView({ project }: RoadmapViewProps) {
     if (data) setActiveDragData(data)
   }
 
+  const persistSchedule = useCallback(async (activityId: string, startDate: Date | null, rowIndex: number | null) => {
+    try {
+      await api.activities.update(project.id, activityId, {
+        startDate: startDate?.toISOString() ?? null,
+        rowIndex,
+      })
+    } catch {
+      toast.error('Failed to save schedule')
+    }
+  }, [project.id])
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over, delta } = event
     setActiveDragData(null)
@@ -83,13 +96,12 @@ export function RoadmapView({ project }: RoadmapViewProps) {
 
     const overId = String(over.id)
 
-    // Drop on sidebar -> unschedule
     if (overId === 'activity-sidebar') {
       unscheduleActivity(dragData.activityId)
+      persistSchedule(dragData.activityId, null, null)
       return
     }
 
-    // Determine row
     let rowIndex = 0
     if (overId.startsWith('row-')) {
       rowIndex = parseInt(overId.replace('row-', ''), 10)
@@ -101,7 +113,6 @@ export function RoadmapView({ project }: RoadmapViewProps) {
     let newStartDate: Date
 
     if (dragData.source === 'sidebar') {
-      // Use the drop target rect center + pointer delta
       const overRect = over.rect as DOMRectReadOnly | null
       if (!overRect) return
       const ganttContainerRect = scrollContainerRef.current?.getBoundingClientRect()
@@ -110,59 +121,116 @@ export function RoadmapView({ project }: RoadmapViewProps) {
         overRect.left - ganttContainerRect.left + overRect.width / 2 + delta.x + scrollLeft
       newStartDate = pixelToDate(pointerXInGantt, chartStart, timeView)
     } else {
-      // Chart to chart: original pixel offset + horizontal delta
       const originalPx = dragData.originalOffsetPx ?? 0
       newStartDate = pixelToDate(originalPx + delta.x, chartStart, timeView)
     }
 
     const snapped = snapDateToView(newStartDate, timeView)
     scheduleActivity(dragData.activityId, snapped, rowIndex)
+    persistSchedule(dragData.activityId, snapped, rowIndex)
   }
 
-  const handleCreateActivity = (input: CreateActivityInput) => {
-    const now = new Date()
-    const activityId = generateId()
-    const newActivity: Activity = {
-      id: activityId,
-      name: input.name,
-      description: input.description,
-      color: input.color ?? DEFAULT_ACTIVITY_COLOR,
-      durationSprints: input.durationSprints ?? 1,
-      startDate: null,
-      rowIndex: null,
-      isDelivered: false,
-      deliveryDate: null,
-      deliveryLabel: null,
-      projectId: project.id,
-      tags: (input.tags ?? []).map((t) => ({
-        id: generateId(),
-        name: t.name,
-        color: t.color,
-        activityId: activityId,
-      })),
-      createdAt: now,
-      updatedAt: now,
+  const handleCreateActivity = async (input: CreateActivityInput) => {
+    try {
+      const created = await api.activities.create(project.id, {
+        name: input.name,
+        description: input.description,
+        color: input.color,
+        durationSprints: input.durationSprints,
+        tags: input.tags,
+      })
+
+      const newActivity: Activity = {
+        id: created.id,
+        name: created.name,
+        description: created.description ?? undefined,
+        color: created.color,
+        durationSprints: created.durationSprints,
+        startDate: null,
+        rowIndex: null,
+        isDelivered: false,
+        deliveryDate: null,
+        deliveryLabel: null,
+        projectId: project.id,
+        tags: created.tags,
+        createdAt: new Date(created.createdAt),
+        updatedAt: new Date(created.updatedAt),
+      }
+      addActivity(newActivity)
+      toast.success('Activity created')
+    } catch {
+      toast.error('Failed to create activity')
     }
-    addActivity(newActivity)
   }
 
-  const handleEditActivitySubmit = (input: CreateActivityInput) => {
+  const handleEditActivitySubmit = async (input: CreateActivityInput) => {
     if (!editActivity) return
-    updateActivity(editActivity.id, {
-      name: input.name,
-      description: input.description,
-      color: input.color,
-      durationSprints: input.durationSprints,
-    })
-    setEditActivity(null)
+    try {
+      await api.activities.update(project.id, editActivity.id, {
+        name: input.name,
+        description: input.description,
+        color: input.color,
+        durationSprints: input.durationSprints,
+      })
+      updateActivity(editActivity.id, {
+        name: input.name,
+        description: input.description,
+        color: input.color,
+        durationSprints: input.durationSprints,
+      })
+      setEditActivity(null)
+      toast.success('Activity updated')
+    } catch {
+      toast.error('Failed to update activity')
+    }
   }
 
-  const handleMarkDelivered = (activityId: string, deliveryDate: Date, label: string) => {
-    updateActivity(activityId, {
-      isDelivered: true,
-      deliveryDate,
-      deliveryLabel: label || undefined,
-    })
+  const handleDeleteActivity = async (activityId: string) => {
+    try {
+      await api.activities.delete(project.id, activityId)
+      removeActivity(activityId)
+      toast.success('Activity deleted')
+    } catch {
+      toast.error('Failed to delete activity')
+    }
+  }
+
+  const handleMarkDelivered = async (activityId: string, deliveryDate: Date, label: string) => {
+    try {
+      await api.activities.update(project.id, activityId, {
+        isDelivered: true,
+        deliveryDate: deliveryDate.toISOString(),
+        deliveryLabel: label || null,
+      })
+      updateActivity(activityId, {
+        isDelivered: true,
+        deliveryDate,
+        deliveryLabel: label || undefined,
+      })
+      toast.success('Activity marked as delivered')
+    } catch {
+      toast.error('Failed to mark as delivered')
+    }
+  }
+
+  const handleAddDependency = async (fromId: string, toId: string) => {
+    try {
+      const dep = await api.dependencies.create(project.id, fromId, toId)
+      setDependencies((prev) => [...prev, dep])
+      toast.success('Dependency added')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add dependency')
+    }
+  }
+
+  const handleRemoveDependency = async (depId: string) => {
+    try {
+      await api.dependencies.delete(project.id, depId)
+      setDependencies((prev) => prev.filter((d) => d.id !== depId))
+      toast.success('Dependency removed')
+    } catch {
+      toast.error('Failed to remove dependency')
+    }
   }
 
   const handleExport = async () => {
@@ -181,8 +249,9 @@ export function RoadmapView({ project }: RoadmapViewProps) {
       })
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2)
       pdf.save(`${project.name}-roadmap.pdf`)
-    } catch (error) {
-      console.error('Failed to export PDF:', error)
+      toast.success('PDF exported')
+    } catch {
+      toast.error('Failed to export PDF')
     }
   }
 
@@ -221,17 +290,20 @@ export function RoadmapView({ project }: RoadmapViewProps) {
             allTags={allTags}
             onCreateActivity={handleCreateActivity}
             onEditActivity={(a) => setEditActivity(a)}
-            onDeleteActivity={removeActivity}
+            onDeleteActivity={handleDeleteActivity}
           />
 
           <div id="gantt-export-target" className="flex-1 overflow-hidden flex flex-col">
             <GanttChart
               activities={scheduledFiltered}
+              dependencies={dependencies}
               sprintDays={project.sprintDuration}
               timeView={timeView}
               onEdit={(a) => setEditActivity(a)}
               onMarkDelivered={(a) => setDeliveredActivity(a)}
-              onDelete={removeActivity}
+              onDelete={handleDeleteActivity}
+              onAddDependency={handleAddDependency}
+              onRemoveDependency={handleRemoveDependency}
               onScrollChange={setScrollLeft}
               scrollContainerRef={scrollContainerRef}
             />

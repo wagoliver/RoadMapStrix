@@ -21,6 +21,8 @@ interface GanttChartProps {
   onEdit?: (activity: Activity) => void
   onMarkDelivered?: (activity: Activity) => void
   onDelete?: (activityId: string) => void
+  onAddDependency?: (fromId: string, toId: string) => void
+  onRemoveDependency?: (depId: string) => void
   onScrollChange?: (scrollLeft: number) => void
   scrollContainerRef: React.RefObject<HTMLDivElement>
 }
@@ -33,6 +35,8 @@ export function GanttChart({
   onEdit,
   onMarkDelivered,
   onDelete,
+  onAddDependency,
+  onRemoveDependency,
   onScrollChange,
   scrollContainerRef,
 }: GanttChartProps) {
@@ -55,7 +59,6 @@ export function GanttChart({
     }
   }
 
-  // Auto-scroll to today on mount and view change
   useEffect(() => {
     if (!scrollContainerRef.current) return
     const today = new Date()
@@ -74,10 +77,8 @@ export function GanttChart({
         onScroll={handleScroll}
       >
         <div style={{ width: totalWidthPx, minHeight: totalHeight + 40 }} className="relative">
-          {/* Sticky header */}
           <GanttHeader timeView={timeView} totalWidthPx={totalWidthPx} />
 
-          {/* Chart body */}
           <div
             ref={setDroppableRef}
             className="relative"
@@ -85,15 +86,12 @@ export function GanttChart({
           >
             <GanttGrid timeView={timeView} rowCount={rowCount} totalWidthPx={totalWidthPx} />
 
-            {/* Drop rows */}
             {Array.from({ length: rowCount }).map((_, i) => (
               <GanttRow key={i} rowIndex={i} totalWidthPx={totalWidthPx} />
             ))}
 
-            {/* Today marker */}
             <TodayMarker timeView={timeView} />
 
-            {/* Dependency arrows */}
             <DependencyArrows
               activities={scheduledActivities}
               dependencies={dependencies}
@@ -101,16 +99,19 @@ export function GanttChart({
               timeView={timeView}
             />
 
-            {/* Activity blocks */}
             {scheduledActivities.map((activity) => (
               <GanttActivityBlock
                 key={activity.id}
                 activity={activity}
+                allActivities={scheduledActivities}
+                dependencies={dependencies}
                 sprintDays={sprintDays}
                 timeView={timeView}
                 onEdit={onEdit}
                 onMarkDelivered={onMarkDelivered}
                 onDelete={onDelete}
+                onAddDependency={onAddDependency}
+                onRemoveDependency={onRemoveDependency}
               />
             ))}
           </div>

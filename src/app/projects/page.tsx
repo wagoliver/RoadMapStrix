@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,78 +15,97 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Map, Calendar, Settings, Trash2 } from 'lucide-react'
+import { Plus, Map, Calendar, Settings, Trash2, LogOut, Loader2, Users, LayoutList } from 'lucide-react'
 import { format } from 'date-fns'
-import { generateId } from '@/lib/generateId'
+import { toast } from 'sonner'
+import { api, type ProjectListItem } from '@/lib/api-client'
 import {
   PRESET_COLORS,
   DEFAULT_ACTIVITY_COLOR,
   DEFAULT_SPRINT_DURATION,
   SPRINT_DURATION_MIN,
   SPRINT_DURATION_MAX,
-  LOCAL_STORAGE_KEYS,
 } from '@/lib/constants'
-
-interface LocalProject {
-  id: string
-  name: string
-  description?: string
-  color: string
-  sprintDuration: number
-  createdAt: string
-}
-
-function getLocalProjects(): LocalProject[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.projects) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-function saveLocalProjects(projects: LocalProject[]) {
-  localStorage.setItem(LOCAL_STORAGE_KEYS.projects, JSON.stringify(projects))
-}
 
 export default function ProjectsPage() {
   const router = useRouter()
-  const [projects, setProjects] = useState<LocalProject[]>(() => getLocalProjects())
+  const { data: session, status } = useSession()
+  const [projects, setProjects] = useState<ProjectListItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [color, setColor] = useState(DEFAULT_ACTIVITY_COLOR)
   const [sprintDuration, setSprintDuration] = useState(DEFAULT_SPRINT_DURATION)
 
-  const handleCreate = (e: React.FormEvent) => {
+  const loadProjects = useCallback(async () => {
+    try {
+      const data = await api.projects.list()
+      setProjects(data)
+    } catch {
+      toast.error('Failed to load projects')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+      return
+    }
+    if (status === 'authenticated') {
+      loadProjects()
+    }
+  }, [status, router, loadProjects])
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
-    const newProject: LocalProject = {
-      id: generateId(),
-      name: name.trim(),
-      description: description.trim() || undefined,
-      color,
-      sprintDuration,
-      createdAt: new Date().toISOString(),
+    setCreating(true)
+
+    try {
+      const project = await api.projects.create({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        color,
+        sprintDuration,
+      })
+
+      setName('')
+      setDescription('')
+      setColor(DEFAULT_ACTIVITY_COLOR)
+      setSprintDuration(DEFAULT_SPRINT_DURATION)
+      setCreateOpen(false)
+      toast.success('Project created')
+      router.push(`/projects/${project.id}`)
+    } catch {
+      toast.error('Failed to create project')
+    } finally {
+      setCreating(false)
     }
-    const updated = [...projects, newProject]
-    setProjects(updated)
-    saveLocalProjects(updated)
-    setName('')
-    setDescription('')
-    setColor(DEFAULT_ACTIVITY_COLOR)
-    setSprintDuration(DEFAULT_SPRINT_DURATION)
-    setCreateOpen(false)
-    router.push(`/projects/${newProject.id}`)
   }
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirm('Delete this project? This cannot be undone.')) return
-    const updated = projects.filter((p) => p.id !== id)
-    setProjects(updated)
-    saveLocalProjects(updated)
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.activities(id))
+
+    try {
+      await api.projects.delete(id)
+      setProjects((prev) => prev.filter((p) => p.id !== id))
+      toast.success('Project deleted')
+    } catch {
+      toast.error('Failed to delete project')
+    }
+  }
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
@@ -96,10 +116,16 @@ export default function ProjectsPage() {
           <Map className="w-6 h-6 text-primary" />
           <h1 className="text-xl font-bold">RoadMapStrix</h1>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Project
-        </Button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{session?.user?.name ?? session?.user?.email}</span>
+          <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Project
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: '/login' })}>
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
       </header>
 
       {/* Content */}
@@ -156,6 +182,14 @@ export default function ProjectsPage() {
                     <span className="flex items-center gap-1">
                       <Settings className="w-3 h-3" />
                       {project.sprintDuration}d sprints
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <LayoutList className="w-3 h-3" />
+                      {project._count.activities}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      {project._count.members}
                     </span>
                   </div>
                 </CardContent>
@@ -225,7 +259,8 @@ export default function ProjectsPage() {
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={!name.trim()}>
+              <Button type="submit" disabled={!name.trim() || creating}>
+                {creating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Create
               </Button>
             </DialogFooter>

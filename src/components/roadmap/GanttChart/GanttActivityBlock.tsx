@@ -2,7 +2,7 @@
 
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { Activity } from '@/types'
+import { Activity, ActivityDependency } from '@/types'
 import { TimeView } from '@/lib/gantt/columnConfig'
 import { dateToPixel, activityWidthPx } from '@/lib/gantt/positionUtils'
 import { getChartStartDate } from '@/lib/gantt/timeEngine'
@@ -15,27 +15,38 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 
 interface GanttActivityBlockProps {
   activity: Activity
+  allActivities?: Activity[]
+  dependencies?: ActivityDependency[]
   sprintDays: number
   timeView: TimeView
   onEdit?: (activity: Activity) => void
   onMarkDelivered?: (activity: Activity) => void
   onDelete?: (activityId: string) => void
+  onAddDependency?: (fromId: string, toId: string) => void
+  onRemoveDependency?: (depId: string) => void
 }
 
 const BLOCK_PADDING = 4
 
 export function GanttActivityBlock({
   activity,
+  allActivities = [],
+  dependencies = [],
   sprintDays,
   timeView,
   onEdit,
   onMarkDelivered,
   onDelete,
+  onAddDependency,
+  onRemoveDependency,
 }: GanttActivityBlockProps) {
   const chartStart = getChartStartDate()
   const startDate = activity.startDate ? new Date(activity.startDate) : null
@@ -68,6 +79,20 @@ export function GanttActivityBlock({
     opacity: isDragging ? 0.4 : 1,
   }
 
+  // Dependencies this activity already has
+  const existingDepIds = new Set([
+    ...dependencies.filter((d) => d.fromId === activity.id).map((d) => d.toId),
+    ...dependencies.filter((d) => d.toId === activity.id).map((d) => d.fromId),
+  ])
+
+  const availableTargets = allActivities.filter(
+    (a) => a.id !== activity.id && !existingDepIds.has(a.id)
+  )
+
+  const currentDeps = dependencies.filter(
+    (d) => d.fromId === activity.id || d.toId === activity.id
+  )
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>
@@ -85,7 +110,6 @@ export function GanttActivityBlock({
         >
           <span className="truncate flex-1">{activity.name}</span>
 
-          {/* Tags */}
           {activity.tags.length > 0 && (
             <div className="flex gap-0.5 ml-1 flex-shrink-0">
               {activity.tags.slice(0, 2).map((tag) => (
@@ -100,7 +124,6 @@ export function GanttActivityBlock({
             </div>
           )}
 
-          {/* Delivery marker */}
           {activity.isDelivered && activity.deliveryDate && (
             <DeliveryMarker
               activity={activity}
@@ -117,6 +140,53 @@ export function GanttActivityBlock({
         <ContextMenuItem onClick={() => onMarkDelivered?.(activity)}>
           {activity.isDelivered ? 'Update Delivery' : 'Mark as Delivered'}
         </ContextMenuItem>
+
+        {/* Add dependency */}
+        {onAddDependency && availableTargets.length > 0 && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>Add Dependency</ContextMenuSubTrigger>
+            <ContextMenuSubContent className="max-h-60 overflow-y-auto">
+              {availableTargets.map((target) => (
+                <ContextMenuItem
+                  key={target.id}
+                  onClick={() => onAddDependency(activity.id, target.id)}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                    style={{ backgroundColor: target.color }}
+                  />
+                  {target.name}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+
+        {/* Remove dependency */}
+        {onRemoveDependency && currentDeps.length > 0 && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>Remove Dependency</ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {currentDeps.map((dep) => {
+                const otherId = dep.fromId === activity.id ? dep.toId : dep.fromId
+                const other = allActivities.find((a) => a.id === otherId)
+                return (
+                  <ContextMenuItem
+                    key={dep.id}
+                    onClick={() => onRemoveDependency(dep.id)}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full mr-2 flex-shrink-0"
+                      style={{ backgroundColor: other?.color ?? '#94a3b8' }}
+                    />
+                    {other?.name ?? otherId}
+                  </ContextMenuItem>
+                )
+              })}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+
         <ContextMenuSeparator />
         <ContextMenuItem
           className="text-destructive focus:text-destructive"

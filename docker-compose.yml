@@ -30,6 +30,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-roadmap}:${POSTGRES_PASSWORD:-roadmap}@db:5432/${POSTGRES_DB:-roadmapstrix}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me-in-production}
+      AUTH_TRUST_HOST: "true"
       NODE_ENV: production
     depends_on:
       db:

@@ -45,6 +45,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/pg ./node_modules/pg
+COPY --from=builder /app/node_modules/pg-pool ./node_modules/pg-pool
+COPY --from=builder /app/node_modules/pg-protocol ./node_modules/pg-protocol
+COPY --from=builder /app/node_modules/pg-types ./node_modules/pg-types
+COPY --from=builder /app/node_modules/pgpass ./node_modules/pgpass
 
 USER nextjs
 
@@ -52,5 +57,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Roda migrations e depois inicia o app
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+# Aplica schema e inicia o app
+CMD ["sh", "-c", "npx prisma db push --url \"$DATABASE_URL\" --accept-data-loss 2>/dev/null; node server.js"]
