@@ -372,7 +372,8 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
     try {
       const { default: html2canvas } = await import('html2canvas')
       const jspdfModule = await import('jspdf')
-      const JsPDF = jspdfModule.jsPDF ?? (jspdfModule as unknown as { default: typeof import('jspdf').jsPDF }).default
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const JsPDF = (jspdfModule as any).jsPDF ?? (jspdfModule as any).default
       const el = document.getElementById('gantt-export-target')
       if (!el) return
       const canvas = await html2canvas(el, { scale: 2, useCORS: true })
