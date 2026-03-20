@@ -72,7 +72,9 @@ export function GanttChart({
   // Pan state
   const isPanningRef = useRef(false)
   const panStartXRef = useRef(0)
+  const panStartYRef = useRef(0)
   const panStartScrollRef = useRef(0)
+  const panStartScrollTopRef = useRef(0)
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -114,7 +116,9 @@ export function GanttChart({
       if ((e.target as Element).closest('[data-activity-block]')) return
       isPanningRef.current = true
       panStartXRef.current = e.clientX
+      panStartYRef.current = e.clientY
       panStartScrollRef.current = el.scrollLeft
+      panStartScrollTopRef.current = el.scrollTop
       el.style.cursor = 'grabbing'
       el.style.userSelect = 'none'
     }
@@ -122,6 +126,7 @@ export function GanttChart({
     const onMouseMove = (e: MouseEvent) => {
       if (!isPanningRef.current) return
       el.scrollLeft = panStartScrollRef.current - (e.clientX - panStartXRef.current)
+      el.scrollTop = panStartScrollTopRef.current - (e.clientY - panStartYRef.current)
     }
 
     const stopPan = () => {
@@ -132,10 +137,10 @@ export function GanttChart({
     }
 
     const onWheel = (e: WheelEvent) => {
+      // Ctrl+Wheel = zoom, plain wheel = native scroll (vertical/horizontal)
+      if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
-      // Determine zoom direction: scroll up = zoom in (detail), scroll down = zoom out
       const direction = e.deltaY > 0 ? 1 : -1
-      // Capture the date under the mouse before zoom
       const rect = el.getBoundingClientRect()
       const mouseXInChart = e.clientX - rect.left + el.scrollLeft
       const current = getChartStartDate()
