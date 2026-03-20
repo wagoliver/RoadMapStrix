@@ -89,15 +89,30 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
       )
 
       if (needsScheduling.length > 0) {
-        // Max rowIndex currently in use
-        let nextRow = mapped.reduce(
-          (max, a) => (a.rowIndex != null ? Math.max(max, a.rowIndex + 1) : max),
-          0
-        )
+        // Find the lowest row with no time overlap for the given activity
+        const findFreeRow = (startDate: Date, durationSprints: number, alreadyScheduled: Activity[]): number => {
+          const sprintMs = project.sprintDuration * 24 * 60 * 60 * 1000
+          const endDate = new Date(startDate.getTime() + durationSprints * sprintMs)
+          const maxRow = alreadyScheduled.reduce((max, a) => Math.max(max, a.rowIndex ?? -1), -1)
+          for (let row = 0; row <= maxRow + 1; row++) {
+            const overlaps = alreadyScheduled.some((a) => {
+              if (a.rowIndex !== row || !a.startDate) return false
+              const aEnd = new Date(a.startDate.getTime() + a.durationSprints * sprintMs)
+              return a.startDate < endDate && startDate < aEnd
+            })
+            if (!overlaps) return row
+          }
+          return maxRow + 1
+        }
+
+        // Build a mutable list of already-scheduled activities (grows as we assign new ones)
+        const scheduled = mapped.filter((a) => a.startDate != null)
 
         const updates = needsScheduling.map((a) => {
           const startDate = quarterToStartDate(a.quarter!)
-          const rowIndex = nextRow++
+          const rowIndex = findFreeRow(startDate, a.durationSprints, scheduled)
+          // Register this assignment so subsequent cards respect it
+          scheduled.push({ ...a, startDate, rowIndex })
           return { id: a.id, startDate, rowIndex }
         })
 
