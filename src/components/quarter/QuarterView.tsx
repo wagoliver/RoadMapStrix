@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRoadmapStore } from '@/store/roadmapStore'
 import { Activity } from '@/types'
 import { AREA_COLORS, TEAM_COLORS } from '@/components/planning/EditActivityDialog'
@@ -119,52 +120,51 @@ function StatusBar({ activities }: { activities: Activity[] }) {
   )
 }
 
-// ─── Group picker (inline dropdown on card) ──────────────────────────────────
+// ─── Group picker (portal dropdown) ──────────────────────────────────────────
 
 function GroupPicker({
-  activity,
   groups,
   linkedGroupIds,
-  projectId,
+  anchorRect,
   onToggle,
   onClose,
 }: {
-  activity: Activity
   groups: FeatureGroupData[]
   linkedGroupIds: Set<string>
-  projectId: string
+  anchorRect: DOMRect
   onToggle: (groupId: string, linked: boolean) => Promise<void>
   onClose: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
+  // Position: below and right-aligned to the anchor button
+  const style: React.CSSProperties = {
+    position: 'fixed',
+    top: anchorRect.bottom + 4,
+    left: anchorRect.right - 224, // 224 = w-56
+    zIndex: 9999,
+  }
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose()
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    // Use capture so we get the event before stopPropagation on buttons
+    document.addEventListener('mousedown', handler, true)
+    return () => document.removeEventListener('mousedown', handler, true)
   }, [onClose])
 
-  if (groups.length === 0) {
-    return (
-      <div
-        ref={ref}
-        className="absolute right-0 top-full mt-1 z-50 bg-popover border border-border rounded-xl shadow-2xl w-52 p-3"
-      >
-        <p className="text-[10px] text-muted-foreground text-center py-2">
-          Nenhum grupo criado no Storyboard
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      ref={ref}
-      className="absolute right-0 top-full mt-1 z-50 bg-popover border border-border rounded-xl shadow-2xl w-56 overflow-hidden"
-    >
+  const content = groups.length === 0 ? (
+    <div ref={ref} style={style}
+      className="bg-popover border border-border rounded-xl shadow-2xl w-52 p-3">
+      <p className="text-[10px] text-muted-foreground text-center py-2">
+        Nenhum grupo criado no Storyboard
+      </p>
+    </div>
+  ) : (
+    <div ref={ref} style={style}
+      className="bg-popover border border-border rounded-xl shadow-2xl w-56 overflow-hidden">
       <div className="px-3 py-2 border-b border-border">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Grupos do Storyboard</span>
       </div>
@@ -176,6 +176,7 @@ function GroupPicker({
             <button
               key={g.id}
               disabled={isLoading}
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={async () => {
                 setLoading(g.id)
                 await onToggle(g.id, isLinked)
@@ -200,6 +201,8 @@ function GroupPicker({
       </div>
     </div>
   )
+
+  return createPortal(content, document.body)
 }
 
 // ─── Activity card ───────────────────────────────────────────────────────────
@@ -218,6 +221,8 @@ function ActivityCard({
   onGroupToggle: (groupId: string, activityId: string, linked: boolean) => Promise<void>
 }) {
   const [showPicker, setShowPicker] = useState(false)
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const statusColor = STATUS_COLOR[activity.planStatus ?? 'Backlog'] ?? '#8b8fa3'
   const areaColor   = AREA_COLORS[activity.area ?? '']   ?? '#6366f1'
   const teamColor   = TEAM_COLORS[activity.team ?? '']   ?? '#94a3b8'
@@ -226,10 +231,29 @@ function ActivityCard({
   const linkedGroupIds = activityGroupMap.get(activity.id) ?? new Set<string>()
   const linkedGroups   = groups.filter((g) => linkedGroupIds.has(g.id))
 
+  function togglePicker(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (showPicker) {
+      setShowPicker(false)
+      setAnchorRect(null)
+    } else {
+      const rect = buttonRef.current?.getBoundingClientRect()
+      if (rect) {
+        setAnchorRect(rect)
+        setShowPicker(true)
+      }
+    }
+  }
+
   return (
     <div
-      className="group/card relative border border-border rounded-xl p-3 flex flex-col gap-2.5
-                 hover:border-primary/25 hover:shadow-md hover:-translate-y-px transition-all duration-150 cursor-default"
+      className={cn(
+        'group/card relative border border-border rounded-xl p-3 flex flex-col gap-2.5',
+        'transition-all duration-150 cursor-default',
+        showPicker
+          ? 'border-primary/25 shadow-md'
+          : 'hover:border-primary/25 hover:shadow-md hover:-translate-y-px'
+      )}
       style={{ background: areaColor + '0a' }}
     >
       {/* Status + size */}
@@ -310,27 +334,30 @@ function ActivityCard({
             {g.title}
           </span>
         ))}
-        <div className="relative ml-auto">
+        <div className="ml-auto">
           <button
-            onClick={(e) => { e.stopPropagation(); setShowPicker((v) => !v) }}
+            ref={buttonRef}
+            onClick={togglePicker}
+            onMouseDown={(e) => e.stopPropagation()}
             className={cn(
               'w-5 h-5 rounded flex items-center justify-center transition-colors',
-              linkedGroups.length > 0
-                ? 'text-primary/70 hover:text-primary hover:bg-primary/10'
-                : 'opacity-0 group-hover/card:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10'
+              showPicker
+                ? 'text-primary bg-primary/10'
+                : linkedGroups.length > 0
+                  ? 'text-primary/70 hover:text-primary hover:bg-primary/10'
+                  : 'opacity-0 group-hover/card:opacity-100 text-muted-foreground hover:text-primary hover:bg-primary/10'
             )}
             title="Associar a grupo do Storyboard"
           >
             <Layers className="w-3 h-3" />
           </button>
-          {showPicker && (
+          {showPicker && anchorRect && (
             <GroupPicker
-              activity={activity}
               groups={groups}
               linkedGroupIds={linkedGroupIds}
-              projectId={projectId}
+              anchorRect={anchorRect}
               onToggle={(groupId, linked) => onGroupToggle(groupId, activity.id, linked)}
-              onClose={() => setShowPicker(false)}
+              onClose={() => { setShowPicker(false); setAnchorRect(null) }}
             />
           )}
         </div>
