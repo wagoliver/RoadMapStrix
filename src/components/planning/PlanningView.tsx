@@ -7,7 +7,7 @@ import { CreateActivityDialog } from '@/components/roadmap/ActivitySidebar/Creat
 import { PlanningCard } from './PlanningCard'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronLeft, ChevronRight, Plus, Maximize2, Minimize2, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, Maximize2, Minimize2, Search, X, SlidersHorizontal } from 'lucide-react'
 import { quarterToStartDate } from '@/lib/gantt/positionUtils'
 
 const QUARTERS = [
@@ -29,6 +29,60 @@ export function PlanningView({ project }: PlanningViewProps) {
   const [wishlistSearch, setWishlistSearch] = useState('')
   const [wishlistCollapsed, setWishlistCollapsed] = useState(false)
 
+  // ── Filters (main area only) ──
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterSearch, setFilterSearch] = useState('')
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(new Set())
+  const [selectedAreas, setSelectedAreas] = useState<Set<string>>(new Set())
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
+
+  const toggleSet = (set: Set<string>, value: string): Set<string> => {
+    const next = new Set(Array.from(set))
+    next.has(value) ? next.delete(value) : next.add(value)
+    return next
+  }
+
+  const activeFilterCount =
+    (filterSearch ? 1 : 0) + selectedStatuses.size + selectedAreas.size + selectedClients.size
+
+  const clearFilters = () => {
+    setFilterSearch('')
+    setSelectedStatuses(new Set())
+    setSelectedAreas(new Set())
+    setSelectedClients(new Set())
+  }
+
+  const allStatuses = ['Backlog', 'Planejado', 'Em Andamento', 'Em Review', 'Em Produção', 'Concluído']
+
+  const allAreas = useMemo(() => {
+    const s = new Set<string>()
+    activities.forEach((a) => { if (a.area) s.add(a.area) })
+    return Array.from(s).sort()
+  }, [activities])
+
+  const allClients = useMemo(() => {
+    const s = new Set<string>()
+    activities.forEach((a) => a.clients?.forEach((c) => s.add(c)))
+    return Array.from(s).sort()
+  }, [activities])
+
+  const applyFilters = (list: Activity[]) => {
+    return list.filter((a) => {
+      if (filterSearch) {
+        const q = filterSearch.toLowerCase()
+        const match =
+          a.name.toLowerCase().includes(q) ||
+          (a.description ?? '').toLowerCase().includes(q) ||
+          (a.jiraRef ?? '').toLowerCase().includes(q)
+        if (!match) return false
+      }
+      if (selectedStatuses.size > 0 && !selectedStatuses.has(a.planStatus ?? '')) return false
+      if (selectedAreas.size > 0 && !selectedAreas.has(a.area ?? '')) return false
+      if (selectedClients.size > 0 && !a.clients?.some((c) => selectedClients.has(c))) return false
+      return true
+    })
+  }
+
   const toggleCollapse = (key: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev)
@@ -41,8 +95,10 @@ export function PlanningView({ project }: PlanningViewProps) {
   const expandAll = () => setCollapsed(new Set())
   const collapseAll = () => setCollapsed(new Set([...QUARTERS.map((q) => q.key), 'wishlist']))
 
-  const activitiesForQuarter = (quarter: string) =>
-    activities.filter((a) => a.quarter === quarter)
+  const activitiesForQuarter = (quarter: string) => {
+    const base = activities.filter((a) => a.quarter === quarter)
+    return quarter === 'wishlist' ? base : applyFilters(base)
+  }
 
   const filteredWishlist = useMemo(() => {
     const base = activitiesForQuarter('wishlist')
@@ -262,11 +318,26 @@ export function PlanningView({ project }: PlanningViewProps) {
       {/* ── Main area ── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 min-w-0">
         {/* Toolbar */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <div className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{totalCount}</span> atividades planejadas
           </div>
           <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => setFilterOpen((v) => !v)}
+              className={`relative flex items-center gap-1 px-2.5 py-1 text-xs border rounded-lg transition-colors ${
+                filterOpen || activeFilterCount > 0
+                  ? 'border-primary/60 text-primary bg-primary/5'
+                  : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/50'
+              }`}
+            >
+              <SlidersHorizontal className="w-3 h-3" /> Filtros
+              {activeFilterCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
             <button
               onClick={expandAll}
               className="flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
@@ -281,6 +352,106 @@ export function PlanningView({ project }: PlanningViewProps) {
             </button>
           </div>
         </div>
+
+        {/* Filter panel */}
+        {filterOpen && (
+          <div className="mb-4 border border-border rounded-xl bg-card p-3 flex flex-col gap-3">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                className="w-full bg-background border border-border rounded-lg text-xs pl-8 pr-8 py-1.5 outline-none focus:border-primary/50 placeholder:text-muted-foreground/60 transition-colors"
+                placeholder="Buscar por nome, Jira ID..."
+                value={filterSearch}
+                onChange={(e) => setFilterSearch(e.target.value)}
+              />
+              {filterSearch && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setFilterSearch('')}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Status */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Status</p>
+              <div className="flex flex-wrap gap-1.5">
+                {allStatuses.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSelectedStatuses((prev) => toggleSet(prev, s))}
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
+                      selectedStatuses.has(s)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Área */}
+            {allAreas.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Área</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {allAreas.map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setSelectedAreas((prev) => toggleSet(prev, a))}
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
+                        selectedAreas.has(a)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                      }`}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cliente */}
+            {allClients.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Cliente</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {allClients.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedClients((prev) => toggleSet(prev, c))}
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
+                        selectedClients.has(c)
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clear */}
+            {activeFilterCount > 0 && (
+              <div className="flex justify-end border-t border-border pt-2">
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-3 h-3" /> Limpar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Year group */}
         <div className="border border-border rounded-xl overflow-hidden mb-2">

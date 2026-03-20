@@ -1,12 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { Activity, CreateActivityInput } from '@/types'
 import { ActivityCard } from './ActivityCard'
 import { Input } from '@/components/ui/input'
 import { ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+const MIN_WIDTH = 200
+const MAX_WIDTH = 600
+const DEFAULT_WIDTH = 288 // w-72
 
 interface ActivitySidebarProps {
   ganttActivities: Activity[]
@@ -26,8 +30,32 @@ export function ActivitySidebar({
   const [collapsed, setCollapsed] = useState(false)
   const [ganttOpen, setGanttOpen] = useState(true)
   const [wishlistOpen, setWishlistOpen] = useState(true)
+  const [width, setWidth] = useState(DEFAULT_WIDTH)
+  const isResizing = useRef(false)
 
   const { setNodeRef, isOver } = useDroppable({ id: 'activity-sidebar' })
+
+  const onResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isResizing.current = true
+    const startX = e.clientX
+    const startWidth = width
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isResizing.current) return
+      const delta = ev.clientX - startX
+      setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta)))
+    }
+
+    const onMouseUp = () => {
+      isResizing.current = false
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [width])
 
   const q = search.toLowerCase()
   const filterFn = (a: Activity) =>
@@ -64,11 +92,18 @@ export function ActivitySidebar({
   return (
     <div
       ref={setNodeRef}
+      style={{ width }}
       className={cn(
-        'w-72 flex-shrink-0 border-r bg-card flex flex-col',
+        'flex-shrink-0 border-r bg-card flex flex-col relative',
         isOver && 'bg-primary/5'
       )}
     >
+      {/* Resize handle */}
+      <div
+        onMouseDown={onResizeStart}
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/40 transition-colors z-10"
+        title="Redimensionar"
+      />
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b flex-shrink-0">
         <div className="flex items-center justify-between mb-3">

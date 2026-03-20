@@ -26,7 +26,10 @@
       "Bash(choco --version)",
       "Bash(winget --version)",
       "Bash(pip3 --version)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(python3:*)",
+      "Bash(node -r ts-node/register -e \":*)",
+      "Bash(PGPASSWORD=roadmap psql -h localhost -U roadmap -d roadmapstrix -c \"SELECT a.name FROM \"\"Activity\"\" a JOIN \"\"Project\"\" p ON a.\"\"projectId\"\" = p.id ORDER BY p.name, a.name;\")"
     ]
   }
 }
