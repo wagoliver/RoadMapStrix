@@ -21,9 +21,11 @@ import {
   ChevronRight,
   ChevronDown,
   LogOut,
+  Users,
 } from 'lucide-react'
 import type { Project, Activity, ActivityDependency } from '@/types'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { MembersDialog } from '@/components/roadmap/MembersDialog'
 
 function toActivity(a: ActivityData): Activity {
   return {
@@ -99,6 +101,7 @@ export default function ProjectPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('planning')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
 
   const loadProject = useCallback(async () => {
     try {
@@ -165,6 +168,21 @@ export default function ProjectPage() {
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Members button */}
+        <button
+          onClick={() => setMembersOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          title="Gerenciar membros"
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Members</span>
+          {(project.members?.length ?? 0) > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold leading-none">
+              {project.members?.length}
+            </span>
+          )}
+        </button>
 
         {/* Theme toggle */}
         <ThemeToggle />
@@ -258,6 +276,16 @@ export default function ProjectPage() {
           {activeTab === 'table'      && <TableView />}
         </div>
       </div>
+
+      {session?.user?.id && (
+        <MembersDialog
+          open={membersOpen}
+          onOpenChange={setMembersOpen}
+          projectId={project.id}
+          ownerId={project.ownerId}
+          currentUserId={session.user.id}
+        />
+      )}
     </div>
   )
 }
