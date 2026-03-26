@@ -27,6 +27,8 @@ import type { DragData } from '@/hooks/useDragActivity'
 import { FilterDropdown } from '@/components/ui/FilterDropdown'
 import { useActivityFilters, STATUS_OPTIONS, AREA_OPTIONS, TEAM_OPTIONS, SIZE_OPTIONS, ORIGIN_OPTIONS } from '@/hooks/useActivityFilters'
 import { Search, X } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { MembersDialog } from './MembersDialog'
 
 interface RoadmapViewProps {
   project: Project
@@ -47,6 +49,8 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
 
   const [scrollLeft, setScrollLeft] = useState(0)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
+  const { data: session } = useSession()
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -436,6 +440,8 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
           filterOpen={filterOpen}
           activeFilterCount={activeFilterCount}
           onToggleFilter={() => setFilterOpen((v) => !v)}
+          onOpenMembers={() => setMembersOpen(true)}
+          memberCount={project.members?.length ?? 0}
         />
 
         {/* Filter panel */}
@@ -539,6 +545,16 @@ export function RoadmapView({ project, dependencies: initialDeps = [] }: Roadmap
         activity={deliveredActivity}
         onSubmit={handleMarkDelivered}
       />
+
+      {session?.user?.id && (
+        <MembersDialog
+          open={membersOpen}
+          onOpenChange={setMembersOpen}
+          projectId={project.id}
+          ownerId={project.ownerId}
+          currentUserId={session.user.id}
+        />
+      )}
     </DndContext>
   )
 }

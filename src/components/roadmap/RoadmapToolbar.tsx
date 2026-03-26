@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { Calendar, Download, RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { Calendar, Download, RefreshCw, SlidersHorizontal, Users } from 'lucide-react'
 import { TimeView, COLUMN_CONFIG, TIME_VIEWS } from '@/lib/gantt/columnConfig'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +17,8 @@ interface RoadmapToolbarProps {
   filterOpen?: boolean
   activeFilterCount?: number
   onToggleFilter?: () => void
+  onOpenMembers?: () => void
+  memberCount?: number
 }
 
 export function RoadmapToolbar({
@@ -30,6 +32,8 @@ export function RoadmapToolbar({
   filterOpen = false,
   activeFilterCount = 0,
   onToggleFilter,
+  onOpenMembers,
+  memberCount = 0,
 }: RoadmapToolbarProps) {
   return (
     <div className="h-12 border-b bg-background flex items-center px-4 gap-3 flex-shrink-0">
@@ -66,6 +70,19 @@ export function RoadmapToolbar({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Members */}
+      {onOpenMembers && (
+        <Button variant="outline" size="sm" onClick={onOpenMembers} className="h-7 text-xs gap-1">
+          <Users className="w-3 h-3" />
+          Members
+          {memberCount > 0 && (
+            <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold leading-none">
+              {memberCount}
+            </span>
+          )}
+        </Button>
+      )}
 
       {/* Filter toggle */}
       {onToggleFilter && (

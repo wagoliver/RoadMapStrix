@@ -104,6 +104,40 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+
+  members: {
+    list: (projectId: string) =>
+      request<MemberData[]>(`/api/projects/${projectId}/members`),
+    add: (projectId: string, email: string, role: 'EDITOR' | 'VIEWER' = 'VIEWER') =>
+      request<MemberData>(`/api/projects/${projectId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({ email, role }),
+      }),
+    updateRole: (projectId: string, memberId: string, role: 'EDITOR' | 'VIEWER') =>
+      request<MemberData>(`/api/projects/${projectId}/members`, {
+        method: 'PATCH',
+        body: JSON.stringify({ memberId, role }),
+      }),
+    remove: (projectId: string, memberId: string) =>
+      request<{ success: boolean }>(`/api/projects/${projectId}/members`, {
+        method: 'DELETE',
+        body: JSON.stringify({ memberId }),
+      }),
+  },
+
+  users: {
+    list: () => request<UserListItem[]>('/api/users'),
+    create: (data: { name: string; email: string; password: string }) =>
+      request<{ id: string; name: string; email: string; createdAt: string }>('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<{ success: boolean }>('/api/users', {
+        method: 'DELETE',
+        body: JSON.stringify({ id }),
+      }),
+  },
 }
 
 // API Types
@@ -225,6 +259,14 @@ export interface UpdateActivityData {
   clients?: string[]
   jiraRef?: string | null
   planningNote?: string | null
+}
+
+export interface UserListItem {
+  id: string
+  name: string | null
+  email: string
+  createdAt: string
+  _count: { ownedProjects: number }
 }
 
 export interface FeatureGroupData {

@@ -130,6 +130,13 @@ export default function ProjectsPage() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button
+              onClick={() => router.push('/admin/users')}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="User Management"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => router.push('/settings')}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title="Configurações"
