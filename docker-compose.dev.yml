@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roadmap}
       POSTGRES_DB: ${POSTGRES_DB:-roadmapstrix}
     ports:
-      - "5432:5432"
+      - "9765:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:

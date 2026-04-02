@@ -35,7 +35,13 @@
       "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups/[groupId]\")",
       "Bash(mkdir -p \"D:/RoadMapStrix/src/app/api/projects/[projectId]/feature-groups/[groupId]/activities\")",
       "Bash(D:/RoadMapStrix/src/lib/api-client.ts:*)",
-      "Bash(DATABASE_URL=\"postgresql://roadmap:roadmap@localhost:5432/roadmapstrix\" npx prisma generate)"
+      "Bash(DATABASE_URL=\"postgresql://roadmap:roadmap@localhost:5432/roadmapstrix\" npx prisma generate)",
+      "Bash(find:*)",
+      "Bash(npx --package typescript tsc --noEmit --pretty)",
+      "Bash(npx prisma@7.5 migrate dev --name add-header-hidden-to-feature-group)",
+      "Bash(node -e \"require\\('prisma/config'\\)\")",
+      "Bash(npm ls:*)",
+      "Bash(node -e \"console.log\\(require.resolve\\('@prisma/client'\\)\\)\")"
     ]
   }
 }

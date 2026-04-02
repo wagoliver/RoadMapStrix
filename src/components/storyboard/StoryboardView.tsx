@@ -5,10 +5,10 @@ import { useRoadmapStore } from '@/store/roadmapStore'
 import { Activity } from '@/types'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock } from 'lucide-react'
+import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock, Code, PanelTop, PanelTopOpen } from 'lucide-react'
 import { AREA_COLORS } from '@/components/planning/EditActivityDialog'
 import { cn } from '@/lib/utils'
-import { ElementWrapper, TextElementComp, ImageElementComp } from './CanvasElements'
+import { ElementWrapper, TextElementComp, ImageElementComp, HtmlElementComp } from './CanvasElements'
 import type { CanvasElement } from './canvasTypes'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ interface FeatureGroup {
   height: number
   elements: CanvasElement[]
   locked: boolean
+  headerHidden: boolean
   activities: LinkedActivity[]
 }
 
@@ -303,6 +304,19 @@ function GroupTile({
     setSelectedElementId(el.id)
   }
 
+  const addHtmlElement = () => {
+    const offset = group.elements.length * 20
+    const el: CanvasElement = {
+      id: uid(), type: 'html',
+      x: 20 + offset, y: 20 + offset,
+      width: 300, height: 200,
+      htmlContent: '<h1>Hello</h1>',
+    }
+    const next = [...group.elements, el]
+    scheduleSave({ elements: next })
+    setSelectedElementId(el.id)
+  }
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -330,96 +344,141 @@ function GroupTile({
         style={{ borderTop: `3px solid ${group.color}` }}
       >
         {/* ── Header ── */}
-        <div
-          className={cn('flex items-center gap-2 px-3 py-2 flex-shrink-0', group.locked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
-          style={{ background: group.color + '12' }}
-          onMouseDown={onGroupDragStart}
-        >
-          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: group.color }} />
-
-          {/* Title */}
-          <div className="flex-1 min-w-0" data-no-drag>
-            {editingTitle ? (
-              <input
-                autoFocus
-                className="w-full bg-transparent text-sm font-bold outline-none border-b border-primary/40 pb-0.5"
-                value={titleVal}
-                onChange={(e) => setTitleVal(e.target.value)}
-                onBlur={() => { setEditingTitle(false); scheduleSave({ title: titleVal || 'Novo Grupo' }) }}
-                onKeyDown={(e) => { if (e.key === 'Enter') { setEditingTitle(false); scheduleSave({ title: titleVal || 'Novo Grupo' }) } }}
-              />
-            ) : (
-              <h3
-                className="text-sm font-bold truncate cursor-text hover:text-primary transition-colors"
-                onDoubleClick={() => setEditingTitle(true)}
-                title="Duplo clique para editar"
-              >
-                {group.title}
-              </h3>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-0.5 flex-shrink-0" data-no-drag>
-            {!group.locked && (
-              <>
-                {/* Add text */}
-                <button
-                  onClick={addTextElement}
-                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                  title="Adicionar texto"
-                >
-                  <Type className="w-3.5 h-3.5" />
-                </button>
-                {/* Add image */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                  title="Adicionar imagem"
-                >
-                  <Image className="w-3.5 h-3.5" />
-                </button>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                {/* Link activities */}
-                <button
-                  onClick={() => setShowPicker(true)}
-                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                  title="Vincular cards"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
-
-            {/* Lock / unlock */}
-            <button
-              onClick={() => scheduleSave({ locked: !group.locked })}
-              className={cn(
-                'w-6 h-6 rounded flex items-center justify-center transition-colors',
-                group.locked
-                  ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
-                  : 'text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10'
+        {group.headerHidden ? (
+          <div
+            className={cn('group/header flex items-center gap-1 px-2 py-0.5 flex-shrink-0', group.locked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
+            style={{ background: group.color + '08' }}
+            onMouseDown={onGroupDragStart}
+          >
+            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-40" style={{ background: group.color }} />
+            <div className="flex-1" />
+            <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" data-no-drag>
+              {!group.locked && (
+                <>
+                  <button onClick={addTextElement} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Adicionar texto"><Type className="w-3 h-3" /></button>
+                  <button onClick={() => fileInputRef.current?.click()} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Adicionar imagem"><Image className="w-3 h-3" /></button>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  <button onClick={addHtmlElement} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Adicionar HTML"><Code className="w-3 h-3" /></button>
+                </>
               )}
-              title={group.locked ? 'Desbloquear grupo' : 'Travar grupo'}
-            >
-              {group.locked
-                ? <Lock className="w-3.5 h-3.5" />
-                : <Unlock className="w-3.5 h-3.5" />
-              }
-            </button>
-
-            {/* Delete group — hidden when locked */}
-            {!group.locked && (
               <button
-                onClick={() => onDelete(group.id)}
-                className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                title="Excluir grupo"
+                onClick={() => scheduleSave({ headerHidden: false })}
+                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                title="Mostrar cabeçalho"
               >
-                <Trash2 className="w-3 h-3" />
+                <PanelTopOpen className="w-3 h-3" />
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div
+            className={cn('flex items-center gap-2 px-3 py-2 flex-shrink-0', group.locked ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
+            style={{ background: group.color + '12' }}
+            onMouseDown={onGroupDragStart}
+          >
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: group.color }} />
+
+            {/* Title */}
+            <div className="flex-1 min-w-0" data-no-drag>
+              {editingTitle ? (
+                <input
+                  autoFocus
+                  className="w-full bg-transparent text-sm font-bold outline-none border-b border-primary/40 pb-0.5"
+                  value={titleVal}
+                  onChange={(e) => setTitleVal(e.target.value)}
+                  onBlur={() => { setEditingTitle(false); scheduleSave({ title: titleVal || 'Novo Grupo' }) }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { setEditingTitle(false); scheduleSave({ title: titleVal || 'Novo Grupo' }) } }}
+                />
+              ) : (
+                <h3
+                  className="text-sm font-bold truncate cursor-text hover:text-primary transition-colors"
+                  onDoubleClick={() => setEditingTitle(true)}
+                  title="Duplo clique para editar"
+                >
+                  {group.title}
+                </h3>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-0.5 flex-shrink-0" data-no-drag>
+              {!group.locked && (
+                <>
+                  {/* Add text */}
+                  <button
+                    onClick={addTextElement}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Adicionar texto"
+                  >
+                    <Type className="w-3.5 h-3.5" />
+                  </button>
+                  {/* Add image */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Adicionar imagem"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  {/* Add HTML */}
+                  <button
+                    onClick={addHtmlElement}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Adicionar HTML"
+                  >
+                    <Code className="w-3.5 h-3.5" />
+                  </button>
+                  {/* Link activities */}
+                  <button
+                    onClick={() => setShowPicker(true)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Vincular cards"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+
+              {/* Hide header */}
+              <button
+                onClick={() => scheduleSave({ headerHidden: true })}
+                className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                title="Ocultar cabeçalho"
+              >
+                <PanelTop className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Lock / unlock */}
+              <button
+                onClick={() => scheduleSave({ locked: !group.locked })}
+                className={cn(
+                  'w-6 h-6 rounded flex items-center justify-center transition-colors',
+                  group.locked
+                    ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
+                    : 'text-muted-foreground hover:text-amber-400 hover:bg-amber-400/10'
+                )}
+                title={group.locked ? 'Desbloquear grupo' : 'Travar grupo'}
+              >
+                {group.locked
+                  ? <Lock className="w-3.5 h-3.5" />
+                  : <Unlock className="w-3.5 h-3.5" />
+                }
+              </button>
+
+              {/* Delete group — hidden when locked */}
+              {!group.locked && (
+                <button
+                  onClick={() => onDelete(group.id)}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  title="Excluir grupo"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Free canvas area ── */}
         <div
@@ -452,6 +511,12 @@ function GroupTile({
             >
               {el.type === 'text' ? (
                 <TextElementComp
+                  element={el}
+                  selected={selectedElementId === el.id}
+                  onUpdate={(patch) => updateElement(el.id, patch)}
+                />
+              ) : el.type === 'html' ? (
+                <HtmlElementComp
                   element={el}
                   selected={selectedElementId === el.id}
                   onUpdate={(patch) => updateElement(el.id, patch)}
@@ -551,6 +616,7 @@ export function StoryboardView({ projectId }: { projectId: string }) {
         ...g,
         elements: (g.elements as CanvasElement[] | null) ?? [],
         locked: g.locked ?? false,
+        headerHidden: g.headerHidden ?? false,
       }))))
       .catch(() => toast.error('Erro ao carregar storyboard'))
       .finally(() => setLoading(false))
@@ -562,7 +628,7 @@ export function StoryboardView({ projectId }: { projectId: string }) {
     const offset = groups.length * 30
     try {
       const g = await api.featureGroups.create(projectId, { color, x: 40 + offset, y: 40 + offset })
-      setGroups((prev) => [...prev, { ...g, elements: [], locked: false }])
+      setGroups((prev) => [...prev, { ...g, elements: [], locked: false, headerHidden: false }])
     } catch {
       toast.error('Erro ao criar grupo')
     }

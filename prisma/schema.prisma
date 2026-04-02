@@ -148,6 +148,7 @@ model FeatureGroup {
   backgroundImage String?               @db.Text
   elements        Json?
   locked          Boolean               @default(false)
+  headerHidden    Boolean               @default(false)
   createdAt       DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
   project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)

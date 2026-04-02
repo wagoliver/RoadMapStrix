@@ -282,6 +282,7 @@ export interface FeatureGroupData {
   backgroundImage: string | null
   elements: unknown | null
   locked: boolean
+  headerHidden: boolean
   createdAt: string
   updatedAt: string
   activities: {

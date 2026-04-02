@@ -8,7 +8,7 @@ import { Color } from '@tiptap/extension-color'
 import { Underline } from '@tiptap/extension-underline'
 import { TextAlign } from '@tiptap/extension-text-align'
 import { Highlight } from '@tiptap/extension-highlight'
-import { Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Image as ImageFit, ChevronDown, Check } from 'lucide-react'
+import { Trash2, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Underline as UnderlineIcon, Strikethrough, Image as ImageFit, ChevronDown, Check, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CanvasElement } from './canvasTypes'
 
@@ -334,6 +334,105 @@ export function ImageElementComp({
           <ImageFit className="w-2.5 h-2.5" />
           {fit}
         </button>
+      )}
+    </div>
+  )
+}
+
+// ─── HTML element ────────────────────────────────────────────────────────────
+
+export function HtmlElementComp({
+  element,
+  selected,
+  onUpdate,
+}: {
+  element: CanvasElement
+  selected: boolean
+  onUpdate: (patch: Partial<CanvasElement>) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(element.htmlContent ?? '')
+
+  const handleOpen = () => {
+    setDraft(element.htmlContent ?? '')
+    setEditing(true)
+  }
+
+  const handleSave = () => {
+    onUpdate({ htmlContent: draft })
+    setEditing(false)
+  }
+
+  const handleCancel = () => {
+    setDraft(element.htmlContent ?? '')
+    setEditing(false)
+  }
+
+  const iframeSrc = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #e4e4e7; background: transparent; overflow: hidden; }
+  img, video, iframe { max-width: 100%; height: auto; }
+</style></head><body>${element.htmlContent ?? ''}</body></html>`
+
+  return (
+    <div className="w-full h-full relative overflow-hidden rounded-md">
+      <iframe
+        srcDoc={iframeSrc}
+        sandbox="allow-scripts"
+        className="w-full h-full border-0 bg-transparent pointer-events-none"
+        title="HTML element"
+      />
+
+      {selected && (
+        <button
+          data-no-drag
+          onClick={(e) => { e.stopPropagation(); handleOpen() }}
+          className="absolute bottom-1 right-1 flex items-center gap-1 px-1.5 py-0.5 bg-black/60 text-white rounded text-[9px] hover:bg-black/80 transition-colors"
+          title="Editar HTML"
+        >
+          <Pencil className="w-2.5 h-2.5" />
+          HTML
+        </button>
+      )}
+
+      {editing && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          data-no-drag
+          onClick={(e) => { e.stopPropagation(); handleCancel() }}
+        >
+          <div
+            className="bg-popover border border-border rounded-xl shadow-2xl w-[640px] max-h-[80vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <span className="text-sm font-semibold">Editar HTML</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCancel}
+                  className="px-3 py-1 text-xs rounded-lg border border-border hover:bg-accent transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-3 py-1 text-xs rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+            <textarea
+              autoFocus
+              className="flex-1 min-h-[300px] p-4 bg-background text-foreground text-xs font-mono outline-none resize-none"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="<h1>Olá mundo</h1>"
+              spellCheck={false}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

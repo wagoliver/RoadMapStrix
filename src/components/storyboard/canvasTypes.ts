@@ -1,6 +1,6 @@
 export interface CanvasElement {
   id: string
-  type: 'text' | 'image'
+  type: 'text' | 'image' | 'html'
   x: number
   y: number
   width: number
@@ -10,4 +10,6 @@ export interface CanvasElement {
   // image
   src?: string       // base64 data URL
   objectFit?: 'cover' | 'contain'
+  // html
+  htmlContent?: string  // Raw HTML rendered in sandboxed iframe
 }

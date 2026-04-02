@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xOne · Roadmap 2025</title>
+<style>
+  :root {
+    --bg: #06060b;
+    --surface: #10101a;
+    --surface2: #181824;
+    --border: #1e1e30;
+    --text: #e8e8f0;
+    --muted: #7a7a92;
+    --accent: #6366f1;
+    --accent-soft: rgba(99,102,241,0.08);
+    --accent-glow: rgba(99,102,241,0.25);
+    --q1: #6366f1; --q1-s: rgba(99,102,241,0.08);  --q1-g: rgba(99,102,241,0.25);
+    --q2: #06b6d4; --q2-s: rgba(6,182,212,0.08);   --q2-g: rgba(6,182,212,0.25);
+    --q3: #f97316; --q3-s: rgba(249,115,22,0.08);   --q3-g: rgba(249,115,22,0.25);
+    --q4: #a855f7; --q4-s: rgba(168,85,247,0.08);   --q4-g: rgba(168,85,247,0.25);
+    --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  html.light {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface2: #f0f0f4;
+    --border: #e0e0e8;
+    --text: #1a1a2e;
+    --muted: #6b6b80;
+    --accent-soft: rgba(99,102,241,0.06);
+    --accent-glow: rgba(99,102,241,0.2);
+    --q1-s: rgba(99,102,241,0.06); --q1-g: rgba(99,102,241,0.18);
+    --q2-s: rgba(6,182,212,0.06);  --q2-g: rgba(6,182,212,0.18);
+    --q3-s: rgba(249,115,22,0.06); --q3-g: rgba(249,115,22,0.18);
+    --q4-s: rgba(168,85,247,0.06); --q4-g: rgba(168,85,247,0.18);
+    --card-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  html.light .s-done  { background: rgba(74,222,128,0.1);  color: #16a34a; }
+  html.light .s-prod  { background: rgba(22,163,74,0.1);   color: #15803d; }
+  html.light .s-prog  { background: rgba(129,140,248,0.1); color: #4f46e5; }
+  html.light .s-rev   { background: rgba(234,179,8,0.1);   color: #b45309; }
+  html.light .s-plan  { background: rgba(6,182,212,0.1);   color: #0e7490; }
+  html.light .s-back  { background: rgba(139,143,163,0.08);color: #64748b; }
+  html.light .dtag-c  { background: rgba(234,179,8,0.06);  color: #a16207; border-color: rgba(234,179,8,0.2); }
+  html.light .q-section::before { opacity: 0.15; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; }
+
+  /* ══════ HERO ══════ */
+  .hero { text-align: center; padding: 64px 32px 32px; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ''; position: absolute; inset: -80px;
+    background: radial-gradient(ellipse 50% 60% at 50% 30%, rgba(99,102,241,0.1), transparent 70%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-block; padding: 5px 14px; border-radius: 99px; font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+    background: var(--accent-soft); border: 1px solid var(--accent-glow); margin-bottom: 16px;
+  }
+  .hero h1 { font-size: clamp(26px,4.5vw,48px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.08; margin-bottom: 12px; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 15px; max-width: 500px; margin: 0 auto; line-height: 1.55; }
+
+  /* ══════ THEME TOGGLE ══════ */
+  .theme-btn {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; box-shadow: var(--card-shadow);
+  }
+  .theme-btn:hover { color: var(--accent); border-color: var(--accent-glow); }
+  .theme-btn svg { width: 18px; height: 18px; }
+  .theme-btn .icon-sun  { display: none; }
+  .theme-btn .icon-moon { display: block; }
+  html.light .theme-btn .icon-sun  { display: block; }
+  html.light .theme-btn .icon-moon { display: none; }
+
+  /* ══════ NAV ══════ */
+  .q-nav {
+    display: flex; justify-content: center; gap: 6px; padding: 20px 16px;
+    position: sticky; top: 0; z-index: 50; background: var(--bg);
+    border-bottom: 1px solid var(--border); transition: background 0.3s;
+  }
+  .q-nav a {
+    display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 99px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+    text-decoration: none; color: var(--muted); border: 1px solid var(--border); transition: all 0.25s;
+  }
+  .q-nav a .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .q-nav a:hover { color: var(--text); border-color: #444; }
+  .q-nav a[data-q="q1"]:hover,.q-nav a[data-q="q1"].active { color: var(--q1); border-color: var(--q1-g); background: var(--q1-s); }
+  .q-nav a[data-q="q2"]:hover,.q-nav a[data-q="q2"].active { color: var(--q2); border-color: var(--q2-g); background: var(--q2-s); }
+  .q-nav a[data-q="q3"]:hover,.q-nav a[data-q="q3"].active { color: var(--q3); border-color: var(--q3-g); background: var(--q3-s); }
+  .q-nav a[data-q="q4"]:hover,.q-nav a[data-q="q4"].active { color: var(--q4); border-color: var(--q4-g); background: var(--q4-s); }
+
+  /* ══════ QUARTER SECTION ══════ */
+  .q-section {
+    position: relative; overflow: hidden; padding: 64px 0 72px;
+    border-bottom: 1px solid var(--border);
+    opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .q-section.visible { opacity: 1; transform: none; }
+  .q-section::before {
+    content: ''; position: absolute; pointer-events: none;
+    width: 600px; height: 600px; border-radius: 50%;
+    top: -180px; filter: blur(120px); opacity: 0.3;
+  }
+  .q-section[data-q="q1"]::before { left: -180px;  background: var(--q1); }
+  .q-section[data-q="q2"]::before { right: -180px; background: var(--q2); }
+  .q-section[data-q="q3"]::before { left: -180px;  background: var(--q3); }
+  .q-section[data-q="q4"]::before { right: -180px; background: var(--q4); }
+  .q-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+  /* ── Quarter header ── */
+  .q-head { display: flex; align-items: flex-end; gap: 20px; margin-bottom: 32px; flex-wrap: wrap; }
+  .q-big { font-size: clamp(56px,9vw,88px); font-weight: 900; letter-spacing: -4px; line-height: 0.85; }
+  .q-meta { padding-bottom: 4px; }
+  .q-meta h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 3px; }
+  .q-meta .period { font-size: 13px; color: var(--muted); }
+
+  /* ring */
+  .q-ring { margin-left: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 2px; }
+  .ring-w { position: relative; width: 58px; height: 58px; }
+  .ring-w svg { width: 58px; height: 58px; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 5; }
+  .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
+  .ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
+  .q-ring .rl { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 3px; }
+
+  /* stats */
+  .q-stats { display: flex; gap: 28px; margin-bottom: 28px; flex-wrap: wrap; }
+  .qs-v { font-size: 26px; font-weight: 800; letter-spacing: -1px; }
+  .qs-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+  /* ══════ CARD (text-first) ══════ */
+  .deliveries { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .dlv {
+    display: flex; gap: 14px; padding: 20px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .dlv:hover { transform: translateY(-2px); box-shadow: var(--card-shadow); }
+  .q-section[data-q="q1"] .dlv:hover { border-color: var(--q1-g); }
+  .q-section[data-q="q2"] .dlv:hover { border-color: var(--q2-g); }
+  .q-section[data-q="q3"] .dlv:hover { border-color: var(--q3-g); }
+  .q-section[data-q="q4"] .dlv:hover { border-color: var(--q4-g); }
+
+  .dlv-icon {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dlv-icon svg { width: 17px; height: 17px; }
+  .dlv-body { flex: 1; min-width: 0; }
+
+  /* TEXT FIRST — description is the hero */
+  .dlv-desc {
+    font-size: 14px; line-height: 1.55; color: var(--text); font-weight: 500; margin-bottom: 8px;
+  }
+  .dlv-name {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--muted); margin-bottom: 8px;
+  }
+
+  .dlv-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dlv-status {
+    display: inline-block; padding: 2px 8px; border-radius: 99px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .s-done { background: rgba(74,222,128,0.12);  color: #4ade80; }
+  .s-prod { background: rgba(22,163,74,0.12);   color: #22c55e; }
+  .s-prog { background: rgba(129,140,248,0.12); color: #818cf8; }
+  .s-rev  { background: rgba(234,179,8,0.12);   color: #eab308; }
+  .s-plan { background: rgba(6,182,212,0.12);   color: #06b6d4; }
+  .s-back { background: rgba(139,143,163,0.1);  color: #8b8fa3; }
+
+  .dtag {
+    padding: 2px 7px; border-radius: 5px; font-size: 9px; font-weight: 600;
+    background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border);
+  }
+  .dtag-c { background: rgba(234,179,8,0.06); color: #eab308; border-color: rgba(234,179,8,0.18); }
+
+  /* ══════ DIVIDER ══════ */
+  .q-div { display: flex; align-items: center; gap: 12px; padding: 0 32px; height: 40px; }
+  .q-div .ln { flex: 1; height: 1px; }
+  .q-div .ar { font-size: 16px; opacity: 0.2; color: var(--muted); }
+
+  /* ══════ FOOTER ══════ */
+  .footer { text-align: center; padding: 40px 24px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
+  .footer strong { color: var(--text); }
+
+  @media (max-width: 640px) {
+    .q-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .q-ring { margin-left: 0; flex-direction: row; gap: 8px; }
+    .q-nav { flex-wrap: wrap; }
+    .q-nav a { padding: 6px 12px; font-size: 10px; }
+    .deliveries { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Theme toggle -->
+<button class="theme-btn" id="themeToggle" title="Alternar tema">
+  <svg class="icon-moon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg class="icon-sun" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+</button>
+
+<!-- ══════ HERO ══════ -->
+<section class="hero">
+  <div class="badge">Roadmap 2025</div>
+  <h1>O futuro do <em>xOne</em><br>esta em construcao</h1>
+  <p>Conhca as principais entregas planejadas para transformar a gestao e seguranca de endpoints da sua empresa.</p>
+</section>
+
+<!-- ══════ NAV ══════ -->
+<nav class="q-nav" id="qnav">
+  <a href="#q1" data-q="q1"><span class="dot" style="background:var(--q1)"></span>Q1 Jan-Mar</a>
+  <a href="#q2" data-q="q2"><span class="dot" style="background:var(--q2)"></span>Q2 Abr-Jun</a>
+  <a href="#q3" data-q="q3"><span class="dot" style="background:var(--q3)"></span>Q3 Jul-Set</a>
+  <a href="#q4" data-q="q4"><span class="dot" style="background:var(--q4)"></span>Q4 Out-Dez</a>
+</nav>
+
+<!-- ═══════════════════════════════════
+     Q1
+     ═══════════════════════════════════ -->
+<section class="q-section" data-q="q1" id="q1">
+  <div class="q-inner">
+    <div class="q-head">
+      <div class="q-big" style="color:var(--q1)">Q1</div>
+      <div class="q-meta"><h2>Fundacao &amp; Entregas Estrategicas</h2><span class="period">Janeiro - Marco 2025</span></div>
+      <div class="q-ring">
+        <div class="ring-w">
+          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q1);stroke-dasharray:175.9;stroke-dashoffset:52.8"/></svg>
+          <span class="ring-pct" style="color:var(--q1)">70%</span>
+        </div>
+        <span class="rl">Progresso</span>
+      </div>
+    </div>
+    <div class="q-stats">
+      <div><div class="qs-v" style="color:var(--q1)">10</div><div class="qs-l">Entregas</div></div>
+      <div><div class="qs-v" style="color:var(--q1)">27</div><div class="qs-l">Sprints</div></div>
+      <div><div class="qs-v" style="color:var(--q1)">3</div><div class="qs-l">Concluidas</div></div>
+    </div>
+    <div class="deliveries">
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Bloqueie e desbloqueie endpoints remotamente via API, com resposta instantanea para incidentes de seguranca.</div>
+          <div class="dlv-name">xOne Locker - Bloqueio Remoto</div>
+          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Localiza</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="2"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Inteligencia Artificial classifica automaticamente softwares instalados nas estacoes, eliminando o trabalho manual de categorizacao.</div>
+          <div class="dlv-name">Categorizacao por I.A. de Programas</div>
+          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Plataforma</span><span class="dtag">I.A.</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Interface completamente redesenhada para gestao de programas com busca inteligente e navegacao por categorias.</div>
+          <div class="dlv-name">Nova Tela de Programas</div>
+          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Plataforma</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Dashboards avancados de BI com visualizacoes interativas e relatorios sob demanda para tomada de decisao.</div>
+          <div class="dlv-name">Business Intelligence - Superset</div>
+          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Analytics</span><span class="dtag dtag-c">Localiza</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Localize estacoes de trabalho em tempo real com suporte a Windows e macOS, essencial para compliance e seguranca patrimonial.</div>
+          <div class="dlv-name">Geolocalizacao - Windows e macOS</div>
+          <div class="dlv-foot"><span class="dlv-status s-rev">Em Review</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Itau</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Migracao completa do parque de estacoes da XP para a plataforma xOne Cloud com suporte dedicado.</div>
+          <div class="dlv-name">Migracao XP Inc.</div>
+          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Integracao</span><span class="dtag dtag-c">XP Inc</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="q-div"><div class="ln" style="background:linear-gradient(90deg,var(--q1),var(--q2))"></div><span class="ar">></span><div class="ln" style="background:linear-gradient(90deg,var(--q2),transparent)"></div></div>
+
+<!-- ═══════════════════════════════════
+     Q2
+     ═══════════════════════════════════ -->
+<section class="q-section" data-q="q2" id="q2">
+  <div class="q-inner">
+    <div class="q-head">
+      <div class="q-big" style="color:var(--q2)">Q2</div>
+      <div class="q-meta"><h2>Seguranca, Automacao &amp; Expansao</h2><span class="period">Abril - Junho 2025</span></div>
+      <div class="q-ring">
+        <div class="ring-w">
+          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q2);stroke-dasharray:175.9;stroke-dashoffset:79.2"/></svg>
+          <span class="ring-pct" style="color:var(--q2)">55%</span>
+        </div>
+        <span class="rl">Progresso</span>
+      </div>
+    </div>
+    <div class="q-stats">
+      <div><div class="qs-v" style="color:var(--q2)">22</div><div class="qs-l">Entregas</div></div>
+      <div><div class="qs-v" style="color:var(--q2)">47</div><div class="qs-l">Sprints</div></div>
+      <div><div class="qs-v" style="color:var(--q2)">10</div><div class="qs-l">Concluidas</div></div>
+    </div>
+    <div class="deliveries">
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Controle de acesso granular por funcionalidade e grupo de maquinas, baseado em roles e contexto organizacional.</div>
+          <div class="dlv-name">Gestao de Perfis e Roles (RBAC)</div>
+          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Plataforma</span><span class="dtag dtag-c">Localiza</span><span class="dtag dtag-c">Inter</span><span class="dtag dtag-c">XP Inc</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Classificacao inteligente de sites acessados por categoria, com regras customizaveis por organizacao.</div>
+          <div class="dlv-name">Categorias para Sites</div>
+          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Plataforma</span><span class="dtag dtag-c">Localiza</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Consolidacao de toda a camada analitica em ClickHouse - performance de consultas ate 10x mais rapida.</div>
+          <div class="dlv-name">Unificacao dos Dados ClickHouse</div>
+          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Performance</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">API publica para integracao de dados do xOne com sistemas internos e ferramentas de BI dos clientes.</div>
+          <div class="dlv-name">API de Extracao de Dados</div>
+          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">API</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Suporte nativo a Windows ARM, expandindo a cobertura para a nova geracao de notebooks corporativos.</div>
+          <div class="dlv-name">xOne Agent - Windows ARM</div>
+          <div class="dlv-foot"><span class="dlv-status s-rev">Em Review</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Itau</span><span class="dtag dtag-c">XP Inc</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Certificacao internacional de seguranca da informacao, reforcando o compromisso com protecao de dados corporativos.</div>
+          <div class="dlv-name">Certificacao ISO 27001</div>
+          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Compliance</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="q-div"><div class="ln" style="background:linear-gradient(90deg,var(--q2),var(--q3))"></div><span class="ar">></span><div class="ln" style="background:linear-gradient(90deg,var(--q3),transparent)"></div></div>
+
+<!-- ═══════════════════════════════════
+     Q3
+     ═══════════════════════════════════ -->
+<section class="q-section" data-q="q3" id="q3">
+  <div class="q-inner">
+    <div class="q-head">
+      <div class="q-big" style="color:var(--q3)">Q3</div>
+      <div class="q-meta"><h2>Infraestrutura &amp; Protecao Avancada</h2><span class="period">Julho - Setembro 2025</span></div>
+      <div class="q-ring">
+        <div class="ring-w">
+          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q3);stroke-dasharray:175.9;stroke-dashoffset:151.3"/></svg>
+          <span class="ring-pct" style="color:var(--q3)">14%</span>
+        </div>
+        <span class="rl">Progresso</span>
+      </div>
+    </div>
+    <div class="q-stats">
+      <div><div class="qs-v" style="color:var(--q3)">7</div><div class="qs-l">Entregas</div></div>
+      <div><div class="qs-v" style="color:var(--q3)">16</div><div class="qs-l">Sprints</div></div>
+      <div><div class="qs-v" style="color:var(--q3)">1</div><div class="qs-l">Concluida</div></div>
+    </div>
+    <div class="deliveries">
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Transferencia do workload para Oracle Cloud Infrastructure - mais resiliencia e reducao de custos operacionais.</div>
+          <div class="dlv-name">Migracao para Oracle Cloud (OCI)</div>
+          <div class="dlv-foot"><span class="dlv-status s-plan">Planejado</span><span class="dtag">Infraestrutura</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Painel centralizado para gerenciar versoes de agentes com rollout gradual e politicas por grupo de maquinas.</div>
+          <div class="dlv-name">Central de Atualizacao de Agentes</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Plataforma</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Protecao extra que exige autenticacao para desinstalar o agente, impedindo remocao nao autorizada do endpoint.</div>
+          <div class="dlv-name">Senha na Desinstalacao do Agente</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Seguranca</span><span class="dtag dtag-c">iFood</span><span class="dtag dtag-c">Afya</span><span class="dtag dtag-c">Itau</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Autenticacao em dois fatores integrada ao Google Workspace para acesso seguro a plataforma xOne.</div>
+          <div class="dlv-name">Duplo Fator de Autenticacao (GSuite)</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Seguranca</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="q-div"><div class="ln" style="background:linear-gradient(90deg,var(--q3),var(--q4))"></div><span class="ar">></span><div class="ln" style="background:linear-gradient(90deg,var(--q4),transparent)"></div></div>
+
+<!-- ═══════════════════════════════════
+     Q4
+     ═══════════════════════════════════ -->
+<section class="q-section" data-q="q4" id="q4">
+  <div class="q-inner">
+    <div class="q-head">
+      <div class="q-big" style="color:var(--q4)">Q4</div>
+      <div class="q-meta"><h2>Novos Modulos &amp; Inteligencia</h2><span class="period">Outubro - Dezembro 2025</span></div>
+      <div class="q-ring">
+        <div class="ring-w">
+          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q4);stroke-dasharray:175.9;stroke-dashoffset:112.6"/></svg>
+          <span class="ring-pct" style="color:var(--q4)">36%</span>
+        </div>
+        <span class="rl">Progresso</span>
+      </div>
+    </div>
+    <div class="q-stats">
+      <div><div class="qs-v" style="color:var(--q4)">11</div><div class="qs-l">Entregas</div></div>
+      <div><div class="qs-v" style="color:var(--q4)">21</div><div class="qs-l">Sprints</div></div>
+      <div><div class="qs-v" style="color:var(--q4)">4</div><div class="qs-l">Concluidas</div></div>
+    </div>
+    <div class="deliveries">
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Analise continua de saude das estacoes e qualidade de conexao Wi-Fi, com alertas proativos para TI.</div>
+          <div class="dlv-name">Monitoramento Inteligente de Estacoes e Wi-Fi</div>
+          <div class="dlv-foot"><span class="dlv-status s-done">Concluido</span><span class="dtag">Plataforma</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Bloqueio e desbloqueio automatico baseado em regras de politica, sem intervencao manual do administrador.</div>
+          <div class="dlv-name">Locker - Bloqueio Automatico</div>
+          <div class="dlv-foot"><span class="dlv-status s-done">Concluido</span><span class="dtag">Seguranca</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Importacao em lote para gestao agil de listas de softwares e sites monitorados - ideal para grandes parques.</div>
+          <div class="dlv-name">Cadastro em Massa de Softwares e URLs</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Plataforma</span><span class="dtag dtag-c">Localiza</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Dashboard dedicado com metricas de uso, performance e conformidade das estacoes de trabalho.</div>
+          <div class="dlv-name">Relatorio BI - Monitoramento de Estacoes</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Analytics</span><span class="dtag dtag-c">Localiza</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Expansao do agente para ambientes Linux Red Hat, cobrindo servidores e estacoes corporativas.</div>
+          <div class="dlv-name">Agente xOne para Linux Red Hat</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Itau</span></div>
+        </div>
+      </div>
+
+      <div class="dlv">
+        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></div>
+        <div class="dlv-body">
+          <div class="dlv-desc">Registro completo de todas as alteracoes em itens importados, garantindo rastreabilidade total em auditorias.</div>
+          <div class="dlv-name">Auditoria - Rastreabilidade de Itens</div>
+          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Compliance</span><span class="dtag dtag-c">Localiza</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════ FOOTER ══════ -->
+<footer class="footer">
+  <p><strong>xOne</strong> - Roadmap 2025 - Sujeito a alteracoes conforme evolucao de prioridades.</p>
+  <p style="margin-top:5px">Documento para uso comercial interno.</p>
+</footer>
+
+<script>
+/* Theme toggle */
+const toggle = document.getElementById('themeToggle');
+const saved = localStorage.getItem('theme');
+if (saved === 'light') document.documentElement.classList.add('light');
+toggle.addEventListener('click', () => {
+  document.documentElement.classList.toggle('light');
+  localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+});
+
+/* Scroll reveal */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.q-section').forEach(s => obs.observe(s));
+
+/* Active nav on scroll */
+const navLinks = document.querySelectorAll('.q-nav a');
+const sections = document.querySelectorAll('.q-section');
+const navObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const q = e.target.dataset.q;
+      navLinks.forEach(a => a.classList.toggle('active', a.dataset.q === q));
+    }
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+sections.forEach(s => navObs.observe(s));
+
+/* Smooth scroll */
+navLinks.forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}));
+</script>
+</body>
+</html>
