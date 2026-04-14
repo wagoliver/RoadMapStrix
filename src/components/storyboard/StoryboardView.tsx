@@ -5,11 +5,12 @@ import { useRoadmapStore } from '@/store/roadmapStore'
 import { Activity } from '@/types'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock, Code, PanelTop, PanelTopOpen } from 'lucide-react'
+import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock, Code, PanelTop, PanelTopOpen, Maximize2, Minimize2, Pencil, ChevronDown, FileCode } from 'lucide-react'
 import { AREA_COLORS } from '@/components/planning/EditActivityDialog'
 import { cn } from '@/lib/utils'
 import { ElementWrapper, TextElementComp, ImageElementComp, HtmlElementComp } from './CanvasElements'
 import type { CanvasElement } from './canvasTypes'
+import { HtmlBoardDialog } from './HtmlBoardDialog'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,10 @@ const STATUS_COLOR: Record<string, string> = {
 
 function uid() {
   return Math.random().toString(36).slice(2, 10)
+}
+
+function isHtmlBoard(group: FeatureGroup): boolean {
+  return group.elements.length === 1 && group.elements[0].type === 'html' && group.elements[0].isFullBoard === true
 }
 
 // ─── Activity Picker ──────────────────────────────────────────────────────────
@@ -183,13 +188,18 @@ function GroupTile({
   onUpdate,
   onDelete,
   onActivityToggle,
+  onFullscreen,
+  onEditHtml,
 }: {
   group: FeatureGroup
   projectId: string
   onUpdate: (id: string, patch: Partial<FeatureGroup>) => void
   onDelete: (id: string) => void
   onActivityToggle: (groupId: string, activityId: string, linked: boolean) => Promise<void>
+  onFullscreen: (id: string) => void
+  onEditHtml: (id: string) => void
 }) {
+  const htmlBoard = isHtmlBoard(group)
   const [showPicker, setShowPicker] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleVal, setTitleVal] = useState(group.title)
@@ -353,13 +363,19 @@ function GroupTile({
             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-40" style={{ background: group.color }} />
             <div className="flex-1" />
             <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" data-no-drag>
-              {!group.locked && (
+              {!group.locked && !htmlBoard && (
                 <>
                   <button onClick={addTextElement} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Adicionar texto"><Type className="w-3 h-3" /></button>
                   <button onClick={() => fileInputRef.current?.click()} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Adicionar imagem"><Image className="w-3 h-3" /></button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   <button onClick={addHtmlElement} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Adicionar HTML"><Code className="w-3 h-3" /></button>
                 </>
+              )}
+              {htmlBoard && !group.locked && (
+                <button onClick={() => onEditHtml(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Editar HTML"><Pencil className="w-3 h-3" /></button>
+              )}
+              {htmlBoard && (
+                <button onClick={() => onFullscreen(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Tela cheia"><Maximize2 className="w-3 h-3" /></button>
               )}
               <button
                 onClick={() => scheduleSave({ headerHidden: false })}
@@ -402,7 +418,7 @@ function GroupTile({
 
             {/* Actions */}
             <div className="flex items-center gap-0.5 flex-shrink-0" data-no-drag>
-              {!group.locked && (
+              {!group.locked && !htmlBoard && (
                 <>
                   {/* Add text */}
                   <button
@@ -438,6 +454,26 @@ function GroupTile({
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </>
+              )}
+
+              {/* HTML Board actions */}
+              {htmlBoard && !group.locked && (
+                <button
+                  onClick={() => onEditHtml(group.id)}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Editar HTML"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {htmlBoard && (
+                <button
+                  onClick={() => onFullscreen(group.id)}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Tela cheia"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
               )}
 
               {/* Hide header */}
@@ -481,6 +517,16 @@ function GroupTile({
         )}
 
         {/* ── Free canvas area ── */}
+        {htmlBoard ? (
+          <div className="flex-1 relative overflow-hidden min-h-0">
+            <iframe
+              srcDoc={group.elements[0].htmlContent ?? ''}
+              sandbox="allow-scripts allow-same-origin"
+              className="w-full h-full border-0"
+              title={group.title}
+            />
+          </div>
+        ) : (
         <div
           ref={canvasRef}
           className="flex-1 relative overflow-hidden min-h-0"
@@ -531,9 +577,10 @@ function GroupTile({
             </ElementWrapper>
           ))}
         </div>
+        )}
 
         {/* ── Activities footer ── */}
-        {group.activities.length > 0 && (
+        {!htmlBoard && group.activities.length > 0 && (
           <>
             <div className="mx-3 border-t border-dashed border-border/60 flex-shrink-0" />
             <div className="px-3 py-2 flex flex-wrap gap-1.5 content-start flex-shrink-0 max-h-28 overflow-y-auto" data-no-drag>
@@ -608,6 +655,10 @@ function GroupTile({
 export function StoryboardView({ projectId }: { projectId: string }) {
   const [groups, setGroups] = useState<FeatureGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const [showCreateMenu, setShowCreateMenu] = useState(false)
+  const [htmlDialogOpen, setHtmlDialogOpen] = useState(false)
+  const [editingHtmlGroupId, setEditingHtmlGroupId] = useState<string | null>(null)
+  const [fullscreenGroupId, setFullscreenGroupId] = useState<string | null>(null)
   const colorIdx = useRef(0)
 
   useEffect(() => {
@@ -633,6 +684,50 @@ export function StoryboardView({ projectId }: { projectId: string }) {
       toast.error('Erro ao criar grupo')
     }
   }
+
+  const handleCreateHtmlBoard = async (htmlContent: string) => {
+    const color = GROUP_COLORS[colorIdx.current % GROUP_COLORS.length]
+    colorIdx.current++
+    const offset = groups.length * 30
+    const fullBoardEl: CanvasElement = {
+      id: uid(), type: 'html',
+      x: 0, y: 0, width: 0, height: 0,
+      htmlContent, isFullBoard: true,
+    }
+    try {
+      const g = await api.featureGroups.create(projectId, {
+        color, x: 40 + offset, y: 40 + offset,
+        width: 600, height: 450,
+        title: 'HTML Board',
+        elements: [fullBoardEl] as unknown as undefined,
+      })
+      setGroups((prev) => [...prev, { ...g, elements: [fullBoardEl], locked: false, headerHidden: false }])
+      setHtmlDialogOpen(false)
+    } catch {
+      toast.error('Erro ao criar HTML Board')
+    }
+  }
+
+  const handleEditHtml = useCallback((groupId: string) => {
+    setEditingHtmlGroupId(groupId)
+    setHtmlDialogOpen(true)
+  }, [])
+
+  const handleSaveEditedHtml = useCallback((htmlContent: string) => {
+    if (!editingHtmlGroupId) return
+    const group = groups.find((g) => g.id === editingHtmlGroupId)
+    if (!group || !isHtmlBoard(group)) return
+    const updatedEl: CanvasElement = { ...group.elements[0], htmlContent }
+    const patch = { elements: [updatedEl] }
+    setGroups((prev) => prev.map((g) => g.id === editingHtmlGroupId ? { ...g, ...patch } : g))
+    api.featureGroups.update(projectId, editingHtmlGroupId, patch).catch(() => toast.error('Erro ao salvar'))
+    setHtmlDialogOpen(false)
+    setEditingHtmlGroupId(null)
+  }, [editingHtmlGroupId, groups, projectId])
+
+  const handleFullscreen = useCallback((groupId: string) => {
+    setFullscreenGroupId(groupId)
+  }, [])
 
   const handleUpdate = useCallback((id: string, patch: Partial<FeatureGroup>) => {
     setGroups((prev) => prev.map((g) => g.id === id ? { ...g, ...patch } : g))
@@ -674,13 +769,44 @@ export function StoryboardView({ projectId }: { projectId: string }) {
         <div className="w-px h-5 bg-border" />
         <span className="text-xs text-muted-foreground">{groups.length} grupo(s)</span>
         <div className="flex-1" />
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-1.5 h-7 px-3 text-xs bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Novo Grupo
-        </button>
+        <div className="relative">
+          <div className="flex items-center">
+            <button
+              onClick={handleCreate}
+              className="flex items-center gap-1.5 h-7 px-3 text-xs bg-primary text-primary-foreground rounded-l-lg hover:bg-primary/90 transition-colors font-medium"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Novo Grupo
+            </button>
+            <button
+              onClick={() => setShowCreateMenu((p) => !p)}
+              className="flex items-center h-7 px-1.5 text-xs bg-primary text-primary-foreground rounded-r-lg hover:bg-primary/90 transition-colors border-l border-primary-foreground/20"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {showCreateMenu && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setShowCreateMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 z-30 bg-popover border border-border rounded-lg shadow-xl py-1 min-w-[160px]">
+                <button
+                  onClick={() => { setShowCreateMenu(false); handleCreate() }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                  Novo Grupo
+                </button>
+                <button
+                  onClick={() => { setShowCreateMenu(false); setEditingHtmlGroupId(null); setHtmlDialogOpen(true) }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors"
+                >
+                  <FileCode className="w-3.5 h-3.5 text-muted-foreground" />
+                  HTML Board
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Canvas */}
@@ -710,10 +836,48 @@ export function StoryboardView({ projectId }: { projectId: string }) {
               onUpdate={handleUpdate}
               onDelete={handleDelete}
               onActivityToggle={handleActivityToggle}
+              onFullscreen={handleFullscreen}
+              onEditHtml={handleEditHtml}
             />
           ))}
         </div>
       </div>
+
+      {/* HTML Board Dialog */}
+      <HtmlBoardDialog
+        open={htmlDialogOpen}
+        initialHtml={editingHtmlGroupId ? groups.find((g) => g.id === editingHtmlGroupId)?.elements[0]?.htmlContent : undefined}
+        onSave={editingHtmlGroupId ? handleSaveEditedHtml : handleCreateHtmlBoard}
+        onClose={() => { setHtmlDialogOpen(false); setEditingHtmlGroupId(null) }}
+      />
+
+      {/* Fullscreen overlay */}
+      {fullscreenGroupId && (() => {
+        const fsGroup = groups.find((g) => g.id === fullscreenGroupId)
+        if (!fsGroup || !isHtmlBoard(fsGroup)) return null
+        return (
+          <div
+            className="fixed inset-0 z-[9999] bg-background flex flex-col"
+            onKeyDown={(e) => { if (e.key === 'Escape') setFullscreenGroupId(null) }}
+            tabIndex={-1}
+            ref={(el) => el?.focus()}
+          >
+            <iframe
+              srcDoc={fsGroup.elements[0].htmlContent ?? ''}
+              sandbox="allow-scripts allow-same-origin"
+              className="flex-1 w-full border-0"
+              title={fsGroup.title}
+            />
+            <button
+              onClick={() => setFullscreenGroupId(null)}
+              className="fixed top-4 right-4 z-[10000] flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-background/80 backdrop-blur border border-border rounded-lg shadow-lg hover:bg-background transition-colors"
+            >
+              <Minimize2 className="w-3.5 h-3.5" />
+              Sair
+            </button>
+          </div>
+        )
+      })()}
     </div>
   )
 }

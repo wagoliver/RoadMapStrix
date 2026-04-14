@@ -33,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (body.backgroundImage  !== undefined) data.backgroundImage  = body.backgroundImage
   if (body.elements         !== undefined) data.elements         = body.elements
   if (body.locked           !== undefined) data.locked           = body.locked
+  if (body.headerHidden     !== undefined) data.headerHidden     = body.headerHidden
 
   const group = await prisma.featureGroup.update({
     where: { id: groupId },

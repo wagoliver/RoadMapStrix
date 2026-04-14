@@ -58,6 +58,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       y: body.y ?? 40,
       width: body.width ?? 420,
       height: body.height ?? 320,
+      elements: body.elements ?? undefined,
     },
     include: { activities: { include: { activity: { select: { id: true, name: true, jiraRef: true, quarter: true, planStatus: true, area: true, sizeLabel: true, durationSprints: true, color: true } } } } },
   })

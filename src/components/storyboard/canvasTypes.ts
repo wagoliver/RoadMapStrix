@@ -12,4 +12,5 @@ export interface CanvasElement {
   objectFit?: 'cover' | 'contain'
   // html
   htmlContent?: string  // Raw HTML rendered in sandboxed iframe
+  isFullBoard?: boolean // Marks this as the sole element of an HTML Board
 }
