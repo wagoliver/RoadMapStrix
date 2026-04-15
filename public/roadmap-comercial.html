@@ -64,6 +64,19 @@
   .hero h1 em { font-style: normal; color: var(--accent); }
   .hero p { color: var(--muted); font-size: 15px; max-width: 500px; margin: 0 auto; line-height: 1.55; }
 
+  /* Hero KPI stats */
+  .hero-kpis {
+    display: flex; justify-content: center; gap: 40px; margin-top: 32px; flex-wrap: wrap;
+  }
+  .hero-kpi { text-align: center; }
+  .hero-kpi .kv { font-size: 36px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+  .hero-kpi .kl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-top: 4px; }
+  .kv-accent { color: var(--accent); }
+  .kv-green  { color: #22c55e; }
+  .kv-orange { color: #fb923c; }
+  html.light .kv-green  { color: #16a34a; }
+  html.light .kv-orange { color: #c2410c; }
+
   /* ══════ THEME TOGGLE ══════ */
   .theme-btn {
     position: fixed; top: 16px; right: 16px; z-index: 100;
@@ -79,125 +92,431 @@
   html.light .theme-btn .icon-sun  { display: block; }
   html.light .theme-btn .icon-moon { display: none; }
 
-  /* ══════ NAV ══════ */
-  .q-nav {
-    display: flex; justify-content: center; gap: 6px; padding: 20px 16px;
-    position: sticky; top: 0; z-index: 50; background: var(--bg);
-    border-bottom: 1px solid var(--border); transition: background 0.3s;
-  }
-  .q-nav a {
-    display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 99px;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
-    text-decoration: none; color: var(--muted); border: 1px solid var(--border); transition: all 0.25s;
-  }
-  .q-nav a .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .q-nav a:hover { color: var(--text); border-color: #444; }
-  .q-nav a[data-q="q1"]:hover,.q-nav a[data-q="q1"].active { color: var(--q1); border-color: var(--q1-g); background: var(--q1-s); }
-  .q-nav a[data-q="q2"]:hover,.q-nav a[data-q="q2"].active { color: var(--q2); border-color: var(--q2-g); background: var(--q2-s); }
-  .q-nav a[data-q="q3"]:hover,.q-nav a[data-q="q3"].active { color: var(--q3); border-color: var(--q3-g); background: var(--q3-s); }
-  .q-nav a[data-q="q4"]:hover,.q-nav a[data-q="q4"].active { color: var(--q4); border-color: var(--q4-g); background: var(--q4-s); }
 
-  /* ══════ QUARTER SECTION ══════ */
-  .q-section {
-    position: relative; overflow: hidden; padding: 64px 0 72px;
-    border-bottom: 1px solid var(--border);
-    opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-  .q-section.visible { opacity: 1; transform: none; }
-  .q-section::before {
-    content: ''; position: absolute; pointer-events: none;
-    width: 600px; height: 600px; border-radius: 50%;
-    top: -180px; filter: blur(120px); opacity: 0.3;
-  }
-  .q-section[data-q="q1"]::before { left: -180px;  background: var(--q1); }
-  .q-section[data-q="q2"]::before { right: -180px; background: var(--q2); }
-  .q-section[data-q="q3"]::before { left: -180px;  background: var(--q3); }
-  .q-section[data-q="q4"]::before { right: -180px; background: var(--q4); }
-  .q-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
-
-  /* ── Quarter header ── */
-  .q-head { display: flex; align-items: flex-end; gap: 20px; margin-bottom: 32px; flex-wrap: wrap; }
-  .q-big { font-size: clamp(56px,9vw,88px); font-weight: 900; letter-spacing: -4px; line-height: 0.85; }
-  .q-meta { padding-bottom: 4px; }
-  .q-meta h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 3px; }
-  .q-meta .period { font-size: 13px; color: var(--muted); }
-
-  /* ring */
-  .q-ring { margin-left: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 2px; }
-  .ring-w { position: relative; width: 58px; height: 58px; }
-  .ring-w svg { width: 58px; height: 58px; transform: rotate(-90deg); }
-  .ring-bg { fill: none; stroke: var(--border); stroke-width: 5; }
-  .ring-fg { fill: none; stroke-width: 5; stroke-linecap: round; }
-  .ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
-  .q-ring .rl { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-top: 3px; }
-
-  /* stats */
-  .q-stats { display: flex; gap: 28px; margin-bottom: 28px; flex-wrap: wrap; }
-  .qs-v { font-size: 26px; font-weight: 800; letter-spacing: -1px; }
-  .qs-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
-
-  /* ══════ CARD (text-first) ══════ */
-  .deliveries { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-  .dlv {
-    display: flex; gap: 14px; padding: 20px; border-radius: 14px;
-    background: var(--surface); border: 1px solid var(--border);
-    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-  }
-  .dlv:hover { transform: translateY(-2px); box-shadow: var(--card-shadow); }
-  .q-section[data-q="q1"] .dlv:hover { border-color: var(--q1-g); }
-  .q-section[data-q="q2"] .dlv:hover { border-color: var(--q2-g); }
-  .q-section[data-q="q3"] .dlv:hover { border-color: var(--q3-g); }
-  .q-section[data-q="q4"] .dlv:hover { border-color: var(--q4-g); }
-
-  .dlv-icon {
-    flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .dlv-icon svg { width: 17px; height: 17px; }
-  .dlv-body { flex: 1; min-width: 0; }
-
-  /* TEXT FIRST — description is the hero */
-  .dlv-desc {
-    font-size: 14px; line-height: 1.55; color: var(--text); font-weight: 500; margin-bottom: 8px;
-  }
-  .dlv-name {
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
-    color: var(--muted); margin-bottom: 8px;
-  }
-
-  .dlv-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .dlv-status {
-    display: inline-block; padding: 2px 8px; border-radius: 99px;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
-  }
-  .s-done { background: rgba(74,222,128,0.12);  color: #4ade80; }
-  .s-prod { background: rgba(22,163,74,0.12);   color: #22c55e; }
-  .s-prog { background: rgba(129,140,248,0.12); color: #818cf8; }
-  .s-rev  { background: rgba(234,179,8,0.12);   color: #eab308; }
-  .s-plan { background: rgba(6,182,212,0.12);   color: #06b6d4; }
-  .s-back { background: rgba(139,143,163,0.1);  color: #8b8fa3; }
-
-  .dtag {
-    padding: 2px 7px; border-radius: 5px; font-size: 9px; font-weight: 600;
-    background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border);
-  }
-  .dtag-c { background: rgba(234,179,8,0.06); color: #eab308; border-color: rgba(234,179,8,0.18); }
-
-  /* ══════ DIVIDER ══════ */
-  .q-div { display: flex; align-items: center; gap: 12px; padding: 0 32px; height: 40px; }
-  .q-div .ln { flex: 1; height: 1px; }
-  .q-div .ar { font-size: 16px; opacity: 0.2; color: var(--muted); }
 
   /* ══════ FOOTER ══════ */
   .footer { text-align: center; padding: 40px 24px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
   .footer strong { color: var(--text); }
 
+  /* ══════ INFOGRAPHIC FLOW ══════ */
+  .flow-section {
+    position: relative;
+    padding: 56px 0 64px;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-section::before {
+    content: '';
+    position: absolute;
+    inset: -60px;
+    background:
+      radial-gradient(ellipse 40% 30% at 15% 30%, rgba(99,102,241,0.06), transparent 60%),
+      radial-gradient(ellipse 40% 30% at 85% 70%, rgba(168,85,247,0.06), transparent 60%);
+    pointer-events: none;
+  }
+  .flow-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .flow-title {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: var(--muted);
+    margin-bottom: 52px;
+  }
+
+  /* The river/path */
+  .flow-river {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Each quarter band */
+  .flow-band {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-height: 200px;
+    padding: 8px 0;
+  }
+  .flow-band:nth-child(even) { flex-direction: row-reverse; }
+
+  /* Subtle background tint per band */
+  .flow-band::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    opacity: 0.35;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .flow-band:hover::before { opacity: 0.6; }
+  .flow-b-q1::before { background: linear-gradient(135deg, rgba(99,102,241,0.04), transparent 60%); }
+  .flow-b-q2::before { background: linear-gradient(225deg, rgba(6,182,212,0.04), transparent 60%); }
+  .flow-b-q3::before { background: linear-gradient(135deg, rgba(249,115,22,0.04), transparent 60%); }
+  .flow-b-q4::before { background: linear-gradient(225deg, rgba(168,85,247,0.04), transparent 60%); }
+
+  /* Quarter badge on the side */
+  .flow-badge {
+    flex-shrink: 0;
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
+  }
+  .flow-badge-inner {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    border: 3px solid;
+    position: relative;
+    z-index: 3;
+    background: var(--bg);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .flow-badge-inner::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px dashed;
+    opacity: 0.25;
+  }
+  .flow-badge-inner:hover { transform: scale(1.12); }
+  .flow-b-q1 .flow-badge-inner { color: var(--q1); border-color: var(--q1); box-shadow: 0 0 30px rgba(99,102,241,0.2); }
+  .flow-b-q1 .flow-badge-inner::after { border-color: var(--q1); }
+  .flow-b-q2 .flow-badge-inner { color: var(--q2); border-color: var(--q2); box-shadow: 0 0 30px rgba(6,182,212,0.2); }
+  .flow-b-q2 .flow-badge-inner::after { border-color: var(--q2); }
+  .flow-b-q3 .flow-badge-inner { color: var(--q3); border-color: var(--q3); box-shadow: 0 0 30px rgba(249,115,22,0.2); }
+  .flow-b-q3 .flow-badge-inner::after { border-color: var(--q3); }
+  .flow-b-q4 .flow-badge-inner { color: var(--q4); border-color: var(--q4); box-shadow: 0 0 30px rgba(168,85,247,0.2); }
+  .flow-b-q4 .flow-badge-inner::after { border-color: var(--q4); }
+  .flow-badge-period {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .flow-badge-sub {
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 4px;
+    text-align: center;
+    max-width: 120px;
+    line-height: 1.3;
+  }
+  .flow-b-q1 .flow-badge-sub { color: var(--q1); }
+  .flow-b-q2 .flow-badge-sub { color: var(--q2); }
+  .flow-b-q3 .flow-badge-sub { color: var(--q3); }
+  .flow-b-q4 .flow-badge-sub { color: var(--q4); }
+
+  /* The connector line between badge and cards */
+  .flow-connector {
+    width: 48px;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .flow-connector::after {
+    content: '';
+    width: 100%;
+    height: 2px;
+    border-radius: 1px;
+    opacity: 0.5;
+  }
+  .flow-b-q1 .flow-connector::after { background: linear-gradient(90deg, var(--q1), transparent); }
+  .flow-b-q2 .flow-connector::after { background: linear-gradient(270deg, var(--q2), transparent); }
+  .flow-b-q3 .flow-connector::after { background: linear-gradient(90deg, var(--q3), transparent); }
+  .flow-b-q4 .flow-connector::after { background: linear-gradient(270deg, var(--q4), transparent); }
+
+  /* Cards grid inside each band */
+  .flow-cards {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 10px;
+    padding: 12px 0;
+    align-content: center;
+  }
+  .flow-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 18px 12px 14px;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: default;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+  .flow-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .flow-card:hover::before { opacity: 1; }
+  .flow-b-q1 .flow-card::before { background: var(--q1); }
+  .flow-b-q2 .flow-card::before { background: var(--q2); }
+  .flow-b-q3 .flow-card::before { background: var(--q3); }
+  .flow-b-q4 .flow-card::before { background: var(--q4); }
+
+  .flow-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--card-shadow);
+  }
+  .flow-b-q1 .flow-card:hover { border-color: var(--q1-g); box-shadow: 0 12px 32px rgba(99,102,241,0.12); }
+  .flow-b-q2 .flow-card:hover { border-color: var(--q2-g); box-shadow: 0 12px 32px rgba(6,182,212,0.12); }
+  .flow-b-q3 .flow-card:hover { border-color: var(--q3-g); box-shadow: 0 12px 32px rgba(249,115,22,0.12); }
+  .flow-b-q4 .flow-card:hover { border-color: var(--q4-g); box-shadow: 0 12px 32px rgba(168,85,247,0.12); }
+
+  .flow-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s;
+  }
+  .flow-card:hover .flow-card-icon { transform: scale(1.1); }
+  .flow-card-icon svg { width: 20px; height: 20px; }
+  .flow-b-q1 .flow-card-icon { background: var(--q1-s); color: var(--q1); }
+  .flow-b-q2 .flow-card-icon { background: var(--q2-s); color: var(--q2); }
+  .flow-b-q3 .flow-card-icon { background: var(--q3-s); color: var(--q3); }
+  .flow-b-q4 .flow-card-icon { background: var(--q4-s); color: var(--q4); }
+
+  .flow-card-name {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .flow-card-tag {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid;
+  }
+  .fc-ok   { color: #22c55e; background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); }
+  .fc-eval { color: #fb923c; background: rgba(251,146,60,0.08); border-color: rgba(251,146,60,0.2); }
+  html.light .fc-ok   { color: #15803d; }
+  html.light .fc-eval { color: #c2410c; }
+
+  /* Card micro-description */
+  .flow-card-desc {
+    font-size: 9px;
+    line-height: 1.4;
+    color: var(--muted);
+    font-weight: 500;
+    max-width: 140px;
+  }
+
+  /* Tooltip on hover */
+  .flow-card[data-tip] { position: relative; }
+  .flow-card[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    width: max-content;
+    max-width: 220px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.5;
+    text-align: left;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 20;
+  }
+  .flow-card[data-tip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Progress bar inside badge */
+  .flow-progress {
+    width: 64px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .flow-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: #22c55e;
+    transition: width 0.6s ease;
+  }
+
+  /* Entrance animations */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .flow-river.animated .flow-card {
+    animation: fadeSlideUp 0.45s ease both;
+  }
+  .flow-river.animated .flow-band:nth-child(1) .flow-card:nth-child(1) { animation-delay: 0.05s; }
+  .flow-river.animated .flow-band:nth-child(1) .flow-card:nth-child(2) { animation-delay: 0.1s; }
+  .flow-river.animated .flow-band:nth-child(1) .flow-card:nth-child(3) { animation-delay: 0.15s; }
+  .flow-river.animated .flow-band:nth-child(1) .flow-card:nth-child(4) { animation-delay: 0.2s; }
+  .flow-river.animated .flow-band:nth-child(1) .flow-card:nth-child(5) { animation-delay: 0.25s; }
+  .flow-river.animated .flow-band:nth-child(1) .flow-card:nth-child(6) { animation-delay: 0.3s; }
+  .flow-river.animated .flow-band:nth-child(3) .flow-card:nth-child(1) { animation-delay: 0.35s; }
+  .flow-river.animated .flow-band:nth-child(3) .flow-card:nth-child(2) { animation-delay: 0.4s; }
+  .flow-river.animated .flow-band:nth-child(3) .flow-card:nth-child(3) { animation-delay: 0.45s; }
+  .flow-river.animated .flow-band:nth-child(3) .flow-card:nth-child(4) { animation-delay: 0.5s; }
+  .flow-river.animated .flow-band:nth-child(3) .flow-card:nth-child(5) { animation-delay: 0.55s; }
+  .flow-river.animated .flow-band:nth-child(3) .flow-card:nth-child(6) { animation-delay: 0.6s; }
+  .flow-river.animated .flow-band:nth-child(5) .flow-card:nth-child(1) { animation-delay: 0.65s; }
+  .flow-river.animated .flow-band:nth-child(5) .flow-card:nth-child(2) { animation-delay: 0.7s; }
+  .flow-river.animated .flow-band:nth-child(5) .flow-card:nth-child(3) { animation-delay: 0.75s; }
+  .flow-river.animated .flow-band:nth-child(5) .flow-card:nth-child(4) { animation-delay: 0.8s; }
+  .flow-river.animated .flow-band:nth-child(7) .flow-card:nth-child(1) { animation-delay: 0.85s; }
+  .flow-river.animated .flow-band:nth-child(7) .flow-card:nth-child(2) { animation-delay: 0.9s; }
+  .flow-river.animated .flow-band:nth-child(7) .flow-card:nth-child(3) { animation-delay: 0.95s; }
+  .flow-river.animated .flow-band:nth-child(7) .flow-card:nth-child(4) { animation-delay: 1.0s; }
+  .flow-river.animated .flow-band:nth-child(7) .flow-card:nth-child(5) { animation-delay: 1.05s; }
+  .flow-river.animated .flow-band:nth-child(7) .flow-card:nth-child(6) { animation-delay: 1.1s; }
+
+  /* Vertical stem between bands */
+  .flow-stem {
+    display: flex;
+    justify-content: center;
+    height: 32px;
+    position: relative;
+  }
+  .flow-stem::before {
+    content: '';
+    width: 2px;
+    height: 100%;
+    border-radius: 1px;
+  }
+  .flow-stem::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .flow-stem-q12::before { background: linear-gradient(var(--q1), var(--q2)); }
+  .flow-stem-q12::after  { background: var(--q2); box-shadow: 0 0 8px rgba(6,182,212,0.4); }
+  .flow-stem-q23::before { background: linear-gradient(var(--q2), var(--q3)); }
+  .flow-stem-q23::after  { background: var(--q3); box-shadow: 0 0 8px rgba(249,115,22,0.4); }
+  .flow-stem-q34::before { background: linear-gradient(var(--q3), var(--q4)); }
+  .flow-stem-q34::after  { background: var(--q4); box-shadow: 0 0 8px rgba(168,85,247,0.4); }
+
+  /* Counter badge on band */
+  .flow-count {
+    position: absolute;
+    top: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+  .flow-band:nth-child(odd) .flow-count { right: 12px; }
+  .flow-band:nth-child(even) .flow-count { left: 12px; }
+
+  /* Legend */
+  .flow-legend {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+  .flow-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .flow-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(0,0,0,0.2);
+  }
+  .flow-legend .sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+  }
+
+  @media (max-width: 900px) {
+    .flow-band, .flow-band:nth-child(even) { flex-direction: column; align-items: stretch; }
+    .flow-badge { width: 100%; flex-direction: row; gap: 12px; padding: 8px 0; }
+    .flow-badge-inner { width: 56px; height: 56px; font-size: 18px; }
+    .flow-badge-inner::after { inset: -4px; }
+    .flow-connector { display: none; }
+    .flow-cards { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .flow-stem { height: 20px; }
+    .flow-count { display: none; }
+  }
+
   @media (max-width: 640px) {
-    .q-head { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .q-ring { margin-left: 0; flex-direction: row; gap: 8px; }
-    .q-nav { flex-wrap: wrap; }
-    .q-nav a { padding: 6px 12px; font-size: 10px; }
-    .deliveries { grid-template-columns: 1fr; }
+    .flow-inner { padding: 0 16px; }
+    .flow-band, .flow-band:nth-child(even) { flex-direction: column; align-items: stretch; }
+    .flow-badge { width: 100%; flex-direction: row; gap: 12px; padding: 8px 0; }
+    .flow-badge-inner { width: 56px; height: 56px; font-size: 18px; }
+    .flow-badge-inner::after { inset: -4px; }
+    .flow-connector { display: none; }
+    .flow-cards { grid-template-columns: 1fr 1fr; }
+    .flow-stem { height: 16px; }
+    .flow-count { display: none; }
   }
 </style>
 </head>
@@ -213,337 +532,245 @@
 <section class="hero">
   <div class="badge">Roadmap 2025</div>
   <h1>O futuro do <em>xOne</em><br>esta em construcao</h1>
-  <p>Conhca as principais entregas planejadas para transformar a gestao e seguranca de endpoints da sua empresa.</p>
+  <p>Conheca as principais entregas planejadas para transformar a gestao e seguranca de endpoints da sua empresa.</p>
+  <div class="hero-kpis">
+    <div class="hero-kpi"><div class="kv kv-accent">22</div><div class="kl">Entregas</div></div>
+    <div class="hero-kpi"><div class="kv kv-green">14</div><div class="kl">Confirmadas</div></div>
+    <div class="hero-kpi"><div class="kv kv-orange">8</div><div class="kl">Em Avaliacao</div></div>
+  </div>
 </section>
 
-<!-- ══════ NAV ══════ -->
-<nav class="q-nav" id="qnav">
-  <a href="#q1" data-q="q1"><span class="dot" style="background:var(--q1)"></span>Q1 Jan-Mar</a>
-  <a href="#q2" data-q="q2"><span class="dot" style="background:var(--q2)"></span>Q2 Abr-Jun</a>
-  <a href="#q3" data-q="q3"><span class="dot" style="background:var(--q3)"></span>Q3 Jul-Set</a>
-  <a href="#q4" data-q="q4"><span class="dot" style="background:var(--q4)"></span>Q4 Out-Dez</a>
-</nav>
+<!-- ══════ INFOGRAPHIC FLOW ══════ -->
+<section class="flow-section">
+  <div class="flow-inner">
+    <div class="flow-title">Visao Geral do Roadmap 2025</div>
 
-<!-- ═══════════════════════════════════
-     Q1
-     ═══════════════════════════════════ -->
-<section class="q-section" data-q="q1" id="q1">
-  <div class="q-inner">
-    <div class="q-head">
-      <div class="q-big" style="color:var(--q1)">Q1</div>
-      <div class="q-meta"><h2>Fundacao &amp; Entregas Estrategicas</h2><span class="period">Janeiro - Marco 2025</span></div>
-      <div class="q-ring">
-        <div class="ring-w">
-          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q1);stroke-dasharray:175.9;stroke-dashoffset:52.8"/></svg>
-          <span class="ring-pct" style="color:var(--q1)">70%</span>
+    <div class="flow-river">
+
+      <!-- ── Q1 Band ── -->
+      <div class="flow-band flow-b-q1">
+        <span class="flow-count">6 entregas</span>
+        <div class="flow-badge">
+          <div class="flow-badge-inner">Q1</div>
+          <div class="flow-badge-period">Jan - Mar</div>
+          <div class="flow-badge-sub">Fundacao</div>
+          <div class="flow-progress"><div class="flow-progress-fill" style="width:100%"></div></div>
         </div>
-        <span class="rl">Progresso</span>
+        <div class="flow-connector"></div>
+        <div class="flow-cards">
+          <a href="#q1" class="flow-card" data-tip="Bloqueie ou desbloqueie qualquer maquina da frota em segundos via API, com resposta instantanea para incidentes.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div class="flow-card-name">Bloqueio Remoto</div>
+            <div class="flow-card-desc">Resposta instantanea a incidentes</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q1" class="flow-card" data-tip="I.A. classifica automaticamente cada software instalado, eliminando categorizacao manual.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="2"/></svg></div>
+            <div class="flow-card-name">Categorizacao I.A.</div>
+            <div class="flow-card-desc">Fim do trabalho manual</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q1" class="flow-card" data-tip="Interface redesenhada com busca inteligente e navegacao por categorias de softwares.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+            <div class="flow-card-name">Nova Tela Programas</div>
+            <div class="flow-card-desc">Busca e navegacao repaginada</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q1" class="flow-card" data-tip="Dashboards interativos com relatorios sob demanda para decisoes baseadas em dados.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
+            <div class="flow-card-name">Business Intelligence</div>
+            <div class="flow-card-desc">Decisoes baseadas em dados</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q1" class="flow-card" data-tip="Localize estacoes Windows e macOS em tempo real, essencial para compliance e seguranca patrimonial.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="flow-card-name">Geolocalizacao</div>
+            <div class="flow-card-desc">Localize maquinas em tempo real</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q1" class="flow-card" data-tip="Migracao completa do parque XP para xOne Cloud com acompanhamento dedicado.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg></div>
+            <div class="flow-card-name">Migracao XP Inc.</div>
+            <div class="flow-card-desc">Onboarding completo na nuvem</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+        </div>
       </div>
+
+      <div class="flow-stem flow-stem-q12"></div>
+
+      <!-- ── Q2 Band ── -->
+      <div class="flow-band flow-b-q2">
+        <span class="flow-count">6 entregas</span>
+        <div class="flow-badge">
+          <div class="flow-badge-inner">Q2</div>
+          <div class="flow-badge-period">Abr - Jun</div>
+          <div class="flow-badge-sub">Expansao</div>
+          <div class="flow-progress"><div class="flow-progress-fill" style="width:100%"></div></div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-cards">
+          <a href="#q2" class="flow-card" data-tip="Controle granular de acesso por funcionalidade, grupo de maquinas e papel organizacional.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+            <div class="flow-card-name">Perfis RBAC</div>
+            <div class="flow-card-desc">Quem pode acessar o que</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q2" class="flow-card" data-tip="Classificacao automatica de sites acessados com regras customizaveis por organizacao.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg></div>
+            <div class="flow-card-name">Categorias Sites</div>
+            <div class="flow-card-desc">Visibilidade da navegacao web</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q2" class="flow-card" data-tip="Consultas ate 10x mais rapidas com a unificacao da camada analitica em ClickHouse.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <div class="flow-card-name">ClickHouse 10x</div>
+            <div class="flow-card-desc">Relatorios em segundos</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q2" class="flow-card" data-tip="API publica para integrar dados do xOne com sistemas internos e ferramentas de BI.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/></svg></div>
+            <div class="flow-card-name">API de Dados</div>
+            <div class="flow-card-desc">Integre com seus sistemas</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q2" class="flow-card" data-tip="Suporte nativo para notebooks com processadores ARM, cobrindo a nova geracao corporativa.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div>
+            <div class="flow-card-name">Windows ARM</div>
+            <div class="flow-card-desc">Nova geracao de notebooks</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q2" class="flow-card" data-tip="Certificacao internacional que garante os mais altos padroes de seguranca da informacao.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="flow-card-name">ISO 27001</div>
+            <div class="flow-card-desc">Padroes globais de seguranca</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="flow-stem flow-stem-q23"></div>
+
+      <!-- ── Q3 Band ── -->
+      <div class="flow-band flow-b-q3">
+        <span class="flow-count">4 entregas</span>
+        <div class="flow-badge">
+          <div class="flow-badge-inner">Q3</div>
+          <div class="flow-badge-period">Jul - Set</div>
+          <div class="flow-badge-sub">Protecao</div>
+          <div class="flow-progress"><div class="flow-progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-cards">
+          <a href="#q3" class="flow-card" data-tip="Migracao para OCI com mais resiliencia e reducao de custos operacionais.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg></div>
+            <div class="flow-card-name">Oracle Cloud</div>
+            <div class="flow-card-desc">Mais resiliencia, menos custo</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+          <a href="#q3" class="flow-card" data-tip="Rollout gradual de versoes de agentes com politicas por grupo de maquinas.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></div>
+            <div class="flow-card-name">Central Update</div>
+            <div class="flow-card-desc">Atualizacoes sem surpresas</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+          <a href="#q3" class="flow-card" data-tip="Senha obrigatoria para remover o agente, impedindo desinstalacao nao autorizada.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div class="flow-card-name">Anti-Desinstalacao</div>
+            <div class="flow-card-desc">Protecao contra remocao</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+          <a href="#q3" class="flow-card" data-tip="Autenticacao em dois fatores integrada ao Google Workspace para acesso seguro.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <div class="flow-card-name">2FA Google</div>
+            <div class="flow-card-desc">Camada extra de seguranca</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="flow-stem flow-stem-q34"></div>
+
+      <!-- ── Q4 Band ── -->
+      <div class="flow-band flow-b-q4">
+        <span class="flow-count">6 entregas</span>
+        <div class="flow-badge">
+          <div class="flow-badge-inner">Q4</div>
+          <div class="flow-badge-period">Out - Dez</div>
+          <div class="flow-badge-sub">Inteligencia</div>
+          <div class="flow-progress"><div class="flow-progress-fill" style="width:33%"></div></div>
+        </div>
+        <div class="flow-connector"></div>
+        <div class="flow-cards">
+          <a href="#q4" class="flow-card" data-tip="Analise continua de saude das estacoes e qualidade do Wi-Fi com alertas proativos.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <div class="flow-card-name">Monitoramento Wi-Fi</div>
+            <div class="flow-card-desc">Alertas antes do problema</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q4" class="flow-card" data-tip="Regras automaticas de bloqueio e desbloqueio sem intervencao manual do admin.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg></div>
+            <div class="flow-card-name">Bloqueio Automatico</div>
+            <div class="flow-card-desc">Seguranca que funciona sozinha</div>
+            <span class="flow-card-tag fc-ok">Confirmado</span>
+          </a>
+          <a href="#q4" class="flow-card" data-tip="Importacao em lote de listas de softwares e URLs, ideal para grandes parques.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="flow-card-name">Cadastro em Massa</div>
+            <div class="flow-card-desc">Importacao agil em lote</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+          <a href="#q4" class="flow-card" data-tip="Dashboard com metricas de uso, performance e conformidade das estacoes.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
+            <div class="flow-card-name">Relatorio BI</div>
+            <div class="flow-card-desc">Tudo para auditorias</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+          <a href="#q4" class="flow-card" data-tip="Agente xOne para ambientes Linux Red Hat, cobrindo servidores corporativos.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/></svg></div>
+            <div class="flow-card-name">Linux Red Hat</div>
+            <div class="flow-card-desc">Cobertura total de OS</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+          <a href="#q4" class="flow-card" data-tip="Registro completo de alteracoes com rastreabilidade total para auditorias.">
+            <div class="flow-card-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+            <div class="flow-card-name">Auditoria Itens</div>
+            <div class="flow-card-desc">Rastreabilidade total</div>
+            <span class="flow-card-tag fc-eval">Em Avaliacao</span>
+          </a>
+        </div>
+      </div>
+
     </div>
-    <div class="q-stats">
-      <div><div class="qs-v" style="color:var(--q1)">10</div><div class="qs-l">Entregas</div></div>
-      <div><div class="qs-v" style="color:var(--q1)">27</div><div class="qs-l">Sprints</div></div>
-      <div><div class="qs-v" style="color:var(--q1)">3</div><div class="qs-l">Concluidas</div></div>
-    </div>
-    <div class="deliveries">
 
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Bloqueie e desbloqueie endpoints remotamente via API, com resposta instantanea para incidentes de seguranca.</div>
-          <div class="dlv-name">xOne Locker - Bloqueio Remoto</div>
-          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Localiza</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/><circle cx="12" cy="15" r="2"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Inteligencia Artificial classifica automaticamente softwares instalados nas estacoes, eliminando o trabalho manual de categorizacao.</div>
-          <div class="dlv-name">Categorizacao por I.A. de Programas</div>
-          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Plataforma</span><span class="dtag">I.A.</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Interface completamente redesenhada para gestao de programas com busca inteligente e navegacao por categorias.</div>
-          <div class="dlv-name">Nova Tela de Programas</div>
-          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Plataforma</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Dashboards avancados de BI com visualizacoes interativas e relatorios sob demanda para tomada de decisao.</div>
-          <div class="dlv-name">Business Intelligence - Superset</div>
-          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">Analytics</span><span class="dtag dtag-c">Localiza</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Localize estacoes de trabalho em tempo real com suporte a Windows e macOS, essencial para compliance e seguranca patrimonial.</div>
-          <div class="dlv-name">Geolocalizacao - Windows e macOS</div>
-          <div class="dlv-foot"><span class="dlv-status s-rev">Em Review</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Itau</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q1-s)"><svg style="color:var(--q1)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Migracao completa do parque de estacoes da XP para a plataforma xOne Cloud com suporte dedicado.</div>
-          <div class="dlv-name">Migracao XP Inc.</div>
-          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Integracao</span><span class="dtag dtag-c">XP Inc</span></div>
-        </div>
-      </div>
-
+    <!-- Legend -->
+    <div class="flow-legend">
+      <div class="flow-legend-item"><div class="flow-legend-dot" style="background:#22c55e"></div>Confirmado</div>
+      <div class="flow-legend-item"><div class="flow-legend-dot" style="background:#fb923c"></div>Em Avaliacao</div>
+      <div class="sep"></div>
+      <div class="flow-legend-item"><div class="flow-legend-dot" style="background:var(--q1)"></div>Q1 Fundacao</div>
+      <div class="flow-legend-item"><div class="flow-legend-dot" style="background:var(--q2)"></div>Q2 Expansao</div>
+      <div class="flow-legend-item"><div class="flow-legend-dot" style="background:var(--q3)"></div>Q3 Protecao</div>
+      <div class="flow-legend-item"><div class="flow-legend-dot" style="background:var(--q4)"></div>Q4 Inteligencia</div>
     </div>
   </div>
 </section>
 
-<div class="q-div"><div class="ln" style="background:linear-gradient(90deg,var(--q1),var(--q2))"></div><span class="ar">></span><div class="ln" style="background:linear-gradient(90deg,var(--q2),transparent)"></div></div>
-
-<!-- ═══════════════════════════════════
-     Q2
-     ═══════════════════════════════════ -->
-<section class="q-section" data-q="q2" id="q2">
-  <div class="q-inner">
-    <div class="q-head">
-      <div class="q-big" style="color:var(--q2)">Q2</div>
-      <div class="q-meta"><h2>Seguranca, Automacao &amp; Expansao</h2><span class="period">Abril - Junho 2025</span></div>
-      <div class="q-ring">
-        <div class="ring-w">
-          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q2);stroke-dasharray:175.9;stroke-dashoffset:79.2"/></svg>
-          <span class="ring-pct" style="color:var(--q2)">55%</span>
-        </div>
-        <span class="rl">Progresso</span>
-      </div>
-    </div>
-    <div class="q-stats">
-      <div><div class="qs-v" style="color:var(--q2)">22</div><div class="qs-l">Entregas</div></div>
-      <div><div class="qs-v" style="color:var(--q2)">47</div><div class="qs-l">Sprints</div></div>
-      <div><div class="qs-v" style="color:var(--q2)">10</div><div class="qs-l">Concluidas</div></div>
-    </div>
-    <div class="deliveries">
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Controle de acesso granular por funcionalidade e grupo de maquinas, baseado em roles e contexto organizacional.</div>
-          <div class="dlv-name">Gestao de Perfis e Roles (RBAC)</div>
-          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Plataforma</span><span class="dtag dtag-c">Localiza</span><span class="dtag dtag-c">Inter</span><span class="dtag dtag-c">XP Inc</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Classificacao inteligente de sites acessados por categoria, com regras customizaveis por organizacao.</div>
-          <div class="dlv-name">Categorias para Sites</div>
-          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Plataforma</span><span class="dtag dtag-c">Localiza</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Consolidacao de toda a camada analitica em ClickHouse - performance de consultas ate 10x mais rapida.</div>
-          <div class="dlv-name">Unificacao dos Dados ClickHouse</div>
-          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Performance</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">API publica para integracao de dados do xOne com sistemas internos e ferramentas de BI dos clientes.</div>
-          <div class="dlv-name">API de Extracao de Dados</div>
-          <div class="dlv-foot"><span class="dlv-status s-prod">Em Producao</span><span class="dtag">API</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Suporte nativo a Windows ARM, expandindo a cobertura para a nova geracao de notebooks corporativos.</div>
-          <div class="dlv-name">xOne Agent - Windows ARM</div>
-          <div class="dlv-foot"><span class="dlv-status s-rev">Em Review</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Itau</span><span class="dtag dtag-c">XP Inc</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q2-s)"><svg style="color:var(--q2)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Certificacao internacional de seguranca da informacao, reforcando o compromisso com protecao de dados corporativos.</div>
-          <div class="dlv-name">Certificacao ISO 27001</div>
-          <div class="dlv-foot"><span class="dlv-status s-prog">Em Andamento</span><span class="dtag">Compliance</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<div class="q-div"><div class="ln" style="background:linear-gradient(90deg,var(--q2),var(--q3))"></div><span class="ar">></span><div class="ln" style="background:linear-gradient(90deg,var(--q3),transparent)"></div></div>
-
-<!-- ═══════════════════════════════════
-     Q3
-     ═══════════════════════════════════ -->
-<section class="q-section" data-q="q3" id="q3">
-  <div class="q-inner">
-    <div class="q-head">
-      <div class="q-big" style="color:var(--q3)">Q3</div>
-      <div class="q-meta"><h2>Infraestrutura &amp; Protecao Avancada</h2><span class="period">Julho - Setembro 2025</span></div>
-      <div class="q-ring">
-        <div class="ring-w">
-          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q3);stroke-dasharray:175.9;stroke-dashoffset:151.3"/></svg>
-          <span class="ring-pct" style="color:var(--q3)">14%</span>
-        </div>
-        <span class="rl">Progresso</span>
-      </div>
-    </div>
-    <div class="q-stats">
-      <div><div class="qs-v" style="color:var(--q3)">7</div><div class="qs-l">Entregas</div></div>
-      <div><div class="qs-v" style="color:var(--q3)">16</div><div class="qs-l">Sprints</div></div>
-      <div><div class="qs-v" style="color:var(--q3)">1</div><div class="qs-l">Concluida</div></div>
-    </div>
-    <div class="deliveries">
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 20h.01"/><path d="M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Transferencia do workload para Oracle Cloud Infrastructure - mais resiliencia e reducao de custos operacionais.</div>
-          <div class="dlv-name">Migracao para Oracle Cloud (OCI)</div>
-          <div class="dlv-foot"><span class="dlv-status s-plan">Planejado</span><span class="dtag">Infraestrutura</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Painel centralizado para gerenciar versoes de agentes com rollout gradual e politicas por grupo de maquinas.</div>
-          <div class="dlv-name">Central de Atualizacao de Agentes</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Plataforma</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Protecao extra que exige autenticacao para desinstalar o agente, impedindo remocao nao autorizada do endpoint.</div>
-          <div class="dlv-name">Senha na Desinstalacao do Agente</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Seguranca</span><span class="dtag dtag-c">iFood</span><span class="dtag dtag-c">Afya</span><span class="dtag dtag-c">Itau</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q3-s)"><svg style="color:var(--q3)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Autenticacao em dois fatores integrada ao Google Workspace para acesso seguro a plataforma xOne.</div>
-          <div class="dlv-name">Duplo Fator de Autenticacao (GSuite)</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Seguranca</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<div class="q-div"><div class="ln" style="background:linear-gradient(90deg,var(--q3),var(--q4))"></div><span class="ar">></span><div class="ln" style="background:linear-gradient(90deg,var(--q4),transparent)"></div></div>
-
-<!-- ═══════════════════════════════════
-     Q4
-     ═══════════════════════════════════ -->
-<section class="q-section" data-q="q4" id="q4">
-  <div class="q-inner">
-    <div class="q-head">
-      <div class="q-big" style="color:var(--q4)">Q4</div>
-      <div class="q-meta"><h2>Novos Modulos &amp; Inteligencia</h2><span class="period">Outubro - Dezembro 2025</span></div>
-      <div class="q-ring">
-        <div class="ring-w">
-          <svg viewBox="0 0 64 64"><circle class="ring-bg" cx="32" cy="32" r="28"/><circle class="ring-fg" cx="32" cy="32" r="28" style="stroke:var(--q4);stroke-dasharray:175.9;stroke-dashoffset:112.6"/></svg>
-          <span class="ring-pct" style="color:var(--q4)">36%</span>
-        </div>
-        <span class="rl">Progresso</span>
-      </div>
-    </div>
-    <div class="q-stats">
-      <div><div class="qs-v" style="color:var(--q4)">11</div><div class="qs-l">Entregas</div></div>
-      <div><div class="qs-v" style="color:var(--q4)">21</div><div class="qs-l">Sprints</div></div>
-      <div><div class="qs-v" style="color:var(--q4)">4</div><div class="qs-l">Concluidas</div></div>
-    </div>
-    <div class="deliveries">
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Analise continua de saude das estacoes e qualidade de conexao Wi-Fi, com alertas proativos para TI.</div>
-          <div class="dlv-name">Monitoramento Inteligente de Estacoes e Wi-Fi</div>
-          <div class="dlv-foot"><span class="dlv-status s-done">Concluido</span><span class="dtag">Plataforma</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Bloqueio e desbloqueio automatico baseado em regras de politica, sem intervencao manual do administrador.</div>
-          <div class="dlv-name">Locker - Bloqueio Automatico</div>
-          <div class="dlv-foot"><span class="dlv-status s-done">Concluido</span><span class="dtag">Seguranca</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Importacao em lote para gestao agil de listas de softwares e sites monitorados - ideal para grandes parques.</div>
-          <div class="dlv-name">Cadastro em Massa de Softwares e URLs</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Plataforma</span><span class="dtag dtag-c">Localiza</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M21 3v6h-6"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Dashboard dedicado com metricas de uso, performance e conformidade das estacoes de trabalho.</div>
-          <div class="dlv-name">Relatorio BI - Monitoramento de Estacoes</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Analytics</span><span class="dtag dtag-c">Localiza</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Expansao do agente para ambientes Linux Red Hat, cobrindo servidores e estacoes corporativas.</div>
-          <div class="dlv-name">Agente xOne para Linux Red Hat</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Agentes</span><span class="dtag dtag-c">Itau</span></div>
-        </div>
-      </div>
-
-      <div class="dlv">
-        <div class="dlv-icon" style="background:var(--q4-s)"><svg style="color:var(--q4)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></div>
-        <div class="dlv-body">
-          <div class="dlv-desc">Registro completo de todas as alteracoes em itens importados, garantindo rastreabilidade total em auditorias.</div>
-          <div class="dlv-name">Auditoria - Rastreabilidade de Itens</div>
-          <div class="dlv-foot"><span class="dlv-status s-back">Backlog</span><span class="dtag">Compliance</span><span class="dtag dtag-c">Localiza</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
 
 <!-- ══════ FOOTER ══════ -->
 <footer class="footer">
   <p><strong>xOne</strong> - Roadmap 2025 - Sujeito a alteracoes conforme evolucao de prioridades.</p>
-  <p style="margin-top:5px">Documento para uso comercial interno.</p>
+  <p style="margin-top:6px; display:flex; align-items:center; justify-content:center; gap:16px;">
+    <span>Ultima atualizacao: Abril 2025</span>
+    <span style="opacity:0.3">|</span>
+    <span style="display:inline-flex; align-items:center; gap:4px;">
+      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Documento confidencial
+    </span>
+  </p>
 </footer>
 
 <script>
-/* Theme toggle */
 const toggle = document.getElementById('themeToggle');
 const saved = localStorage.getItem('theme');
 if (saved === 'light') document.documentElement.classList.add('light');
@@ -552,30 +779,13 @@ toggle.addEventListener('click', () => {
   localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
 });
 
-/* Scroll reveal */
-const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
-}, { threshold: 0.08 });
-document.querySelectorAll('.q-section').forEach(s => obs.observe(s));
-
-/* Active nav on scroll */
-const navLinks = document.querySelectorAll('.q-nav a');
-const sections = document.querySelectorAll('.q-section');
-const navObs = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const q = e.target.dataset.q;
-      navLinks.forEach(a => a.classList.toggle('active', a.dataset.q === q));
-    }
-  });
-}, { rootMargin: '-40% 0px -55% 0px' });
-sections.forEach(s => navObs.observe(s));
-
-/* Smooth scroll */
-navLinks.forEach(a => a.addEventListener('click', e => {
-  e.preventDefault();
-  document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth', block: 'start' });
-}));
+/* Animate cards on scroll */
+const river = document.querySelector('.flow-river');
+if (river) {
+  new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('animated'); } });
+  }, { threshold: 0.1 }).observe(river);
+}
 </script>
 </body>
 </html>
