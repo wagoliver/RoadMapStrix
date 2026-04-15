@@ -41,7 +41,11 @@
       "Bash(npx prisma@7.5 migrate dev --name add-header-hidden-to-feature-group)",
       "Bash(node -e \"require\\('prisma/config'\\)\")",
       "Bash(npm ls:*)",
-      "Bash(node -e \"console.log\\(require.resolve\\('@prisma/client'\\)\\)\")"
+      "Bash(node -e \"console.log\\(require.resolve\\('@prisma/client'\\)\\)\")",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
