@@ -5,7 +5,7 @@ import { useRoadmapStore } from '@/store/roadmapStore'
 import { Activity } from '@/types'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
-import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock, Code, PanelTop, PanelTopOpen, Maximize2, Minimize2, Pencil, ChevronDown, FileCode } from 'lucide-react'
+import { Plus, Trash2, X, Search, Check, Type, Image, Lock, Unlock, Code, PanelTop, PanelTopOpen, Maximize2, Minimize2, Pencil, ChevronDown, FileCode, Download, Copy } from 'lucide-react'
 import { AREA_COLORS } from '@/components/planning/EditActivityDialog'
 import { cn } from '@/lib/utils'
 import { ElementWrapper, TextElementComp, ImageElementComp, HtmlElementComp } from './CanvasElements'
@@ -190,6 +190,8 @@ function GroupTile({
   onActivityToggle,
   onFullscreen,
   onEditHtml,
+  onDownloadHtml,
+  onViewSource,
 }: {
   group: FeatureGroup
   projectId: string
@@ -198,6 +200,8 @@ function GroupTile({
   onActivityToggle: (groupId: string, activityId: string, linked: boolean) => Promise<void>
   onFullscreen: (id: string) => void
   onEditHtml: (id: string) => void
+  onDownloadHtml: (id: string) => void
+  onViewSource: (id: string) => void
 }) {
   const htmlBoard = isHtmlBoard(group)
   const [showPicker, setShowPicker] = useState(false)
@@ -375,7 +379,11 @@ function GroupTile({
                 <button onClick={() => onEditHtml(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Editar HTML"><Pencil className="w-3 h-3" /></button>
               )}
               {htmlBoard && (
-                <button onClick={() => onFullscreen(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Tela cheia"><Maximize2 className="w-3 h-3" /></button>
+                <>
+                  <button onClick={() => onViewSource(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Ver código-fonte"><FileCode className="w-3 h-3" /></button>
+                  <button onClick={() => onDownloadHtml(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Baixar HTML"><Download className="w-3 h-3" /></button>
+                  <button onClick={() => onFullscreen(group.id)} className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title="Tela cheia"><Maximize2 className="w-3 h-3" /></button>
+                </>
               )}
               <button
                 onClick={() => scheduleSave({ headerHidden: false })}
@@ -467,13 +475,29 @@ function GroupTile({
                 </button>
               )}
               {htmlBoard && (
-                <button
-                  onClick={() => onFullscreen(group.id)}
-                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                  title="Tela cheia"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                </button>
+                <>
+                  <button
+                    onClick={() => onViewSource(group.id)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Ver código-fonte"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onDownloadHtml(group.id)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Baixar HTML"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onFullscreen(group.id)}
+                    className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Tela cheia"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
               )}
 
               {/* Hide header */}
@@ -659,6 +683,7 @@ export function StoryboardView({ projectId }: { projectId: string }) {
   const [htmlDialogOpen, setHtmlDialogOpen] = useState(false)
   const [editingHtmlGroupId, setEditingHtmlGroupId] = useState<string | null>(null)
   const [fullscreenGroupId, setFullscreenGroupId] = useState<string | null>(null)
+  const [sourceGroupId, setSourceGroupId] = useState<string | null>(null)
   const colorIdx = useRef(0)
 
   useEffect(() => {
@@ -727,6 +752,27 @@ export function StoryboardView({ projectId }: { projectId: string }) {
 
   const handleFullscreen = useCallback((groupId: string) => {
     setFullscreenGroupId(groupId)
+  }, [])
+
+  const handleDownloadHtml = useCallback((groupId: string) => {
+    const group = groups.find((g) => g.id === groupId)
+    if (!group || !isHtmlBoard(group)) return
+    const html = group.elements[0].htmlContent ?? ''
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const safeName = (group.title || 'html-board').replace(/[^a-z0-9\-_]+/gi, '-').replace(/^-+|-+$/g, '') || 'html-board'
+    a.href = url
+    a.download = `${safeName}.html`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success('HTML exportado')
+  }, [groups])
+
+  const handleViewSource = useCallback((groupId: string) => {
+    setSourceGroupId(groupId)
   }, [])
 
   const handleUpdate = useCallback((id: string, patch: Partial<FeatureGroup>) => {
@@ -838,6 +884,8 @@ export function StoryboardView({ projectId }: { projectId: string }) {
               onActivityToggle={handleActivityToggle}
               onFullscreen={handleFullscreen}
               onEditHtml={handleEditHtml}
+              onDownloadHtml={handleDownloadHtml}
+              onViewSource={handleViewSource}
             />
           ))}
         </div>
@@ -875,6 +923,58 @@ export function StoryboardView({ projectId }: { projectId: string }) {
               <Minimize2 className="w-3.5 h-3.5" />
               Sair
             </button>
+          </div>
+        )
+      })()}
+
+      {/* Source code viewer */}
+      {sourceGroupId && (() => {
+        const srcGroup = groups.find((g) => g.id === sourceGroupId)
+        if (!srcGroup || !isHtmlBoard(srcGroup)) return null
+        const html = srcGroup.elements[0].htmlContent ?? ''
+        return (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setSourceGroupId(null)}
+          >
+            <div
+              className="relative flex flex-col w-[90vw] max-w-3xl max-h-[85vh] rounded-2xl border bg-background shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 px-5 py-4 border-b">
+                <FileCode className="w-5 h-5 text-primary" />
+                <h2 className="text-sm font-semibold flex-1 truncate">Código-fonte · {srcGroup.title}</h2>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(html)
+                      .then(() => toast.success('Código copiado'))
+                      .catch(() => toast.error('Não foi possível copiar'))
+                  }}
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg border hover:bg-muted transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copiar
+                </button>
+                <button
+                  onClick={() => handleDownloadHtml(srcGroup.id)}
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg border hover:bg-muted transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Baixar
+                </button>
+                <button onClick={() => setSourceGroupId(null)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-auto p-4">
+                <pre className="text-xs font-mono whitespace-pre-wrap break-words text-foreground">{html}</pre>
+              </div>
+              <div className="flex items-center justify-between px-5 py-3 border-t">
+                <span className="text-[10px] text-muted-foreground">
+                  {(new Blob([html]).size / 1024).toFixed(1)} KB
+                </span>
+              </div>
+            </div>
           </div>
         )
       })()}
