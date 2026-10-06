@@ -7,8 +7,6 @@ import {
   SPRINT_DURATION_MAX,
   ACTIVITY_DURATION_MIN,
   ACTIVITY_DURATION_MAX,
-  GANTT_MIN_ROW_COUNT,
-  GANTT_CHART_SPAN_DAYS,
   LOCAL_STORAGE_KEYS,
 } from '../constants'
 
@@ -40,16 +38,6 @@ describe('constants', () => {
     it('should have valid activity duration range', () => {
       expect(ACTIVITY_DURATION_MIN).toBe(1)
       expect(ACTIVITY_DURATION_MAX).toBeGreaterThan(ACTIVITY_DURATION_MIN)
-    })
-  })
-
-  describe('gantt constants', () => {
-    it('should have reasonable row count', () => {
-      expect(GANTT_MIN_ROW_COUNT).toBeGreaterThanOrEqual(5)
-    })
-
-    it('should span about 3 years', () => {
-      expect(GANTT_CHART_SPAN_DAYS).toBe(365 * 3)
     })
   })
 

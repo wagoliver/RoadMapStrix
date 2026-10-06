@@ -3,14 +3,14 @@
 import { useState, useMemo } from 'react'
 import type { Activity, Project, CreateActivityInput } from '@/types'
 import { useRoadmapStore } from '@/store/roadmapStore'
-import { CreateActivityDialog } from '@/components/roadmap/ActivitySidebar/CreateActivityDialog'
+import { CreateActivityDialog } from '@/components/planning/CreateActivityDialog'
 import { PlanningCard } from './PlanningCard'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, Maximize2, Minimize2, Search, X, SlidersHorizontal } from 'lucide-react'
 import { FilterDropdown } from '@/components/ui/FilterDropdown'
 import { useActivityFilters, STATUS_OPTIONS, AREA_OPTIONS, TEAM_OPTIONS, SIZE_OPTIONS, ORIGIN_OPTIONS } from '@/hooks/useActivityFilters'
-import { quarterToStartDate } from '@/lib/gantt/positionUtils'
+import { quarterToStartDate } from '@/lib/quarter'
 
 const QUARTERS = [
   { key: 'Q1', label: 'Q1', year: '2026', color: '#06b6d4' },

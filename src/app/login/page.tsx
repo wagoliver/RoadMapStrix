@@ -55,7 +55,7 @@ export default function LoginPage() {
             Plan smarter.<br />Ship faster.
           </h2>
           <p className="text-white/70 text-sm leading-relaxed">
-            Visualize your product roadmap with a Gantt-style interface. Drag, drop and deliver.
+            Plan your product roadmap by quarter. Organize, prioritize and deliver.
           </p>
         </div>
 

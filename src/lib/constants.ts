@@ -13,10 +13,6 @@ export const SPRINT_DURATION_MAX = 90
 export const ACTIVITY_DURATION_MIN = 1
 export const ACTIVITY_DURATION_MAX = 52
 
-export const GANTT_MIN_ROW_COUNT = 10
-export const GANTT_ROW_PADDING = 2
-export const GANTT_CHART_SPAN_DAYS = 365 * 3
-
 export const LOCAL_STORAGE_KEYS = {
   projects: 'roadmapstrix_projects',
   activities: (projectId: string) => `roadmapstrix_activities_${projectId}`,

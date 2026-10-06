@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useRoadmapStore } from '@/store/roadmapStore'
-import { RoadmapView } from '@/components/roadmap/RoadmapView'
 import { PlanningView } from '@/components/planning/PlanningView'
 import { QuarterView } from '@/components/quarter/QuarterView'
 import { StoryboardView } from '@/components/storyboard/StoryboardView'
@@ -13,7 +12,6 @@ import { api, type ProjectDetail, type ActivityData } from '@/lib/api-client'
 import { toast } from 'sonner'
 import {
   Calendar,
-  BarChart2,
   Layers,
   LayoutTemplate,
   Table2,
@@ -23,7 +21,7 @@ import {
   LogOut,
   Users,
 } from 'lucide-react'
-import type { Project, Activity, ActivityDependency } from '@/types'
+import type { Project, Activity } from '@/types'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { MembersDialog } from '@/components/roadmap/MembersDialog'
 
@@ -69,20 +67,10 @@ function toProject(p: ProjectDetail): Project {
   }
 }
 
-function extractDependencies(activities: ActivityData[]): ActivityDependency[] {
-  const deps = new Map<string, ActivityDependency>()
-  for (const a of activities) {
-    for (const d of a.dependsOn ?? []) deps.set(d.id, d)
-    for (const d of a.blockedBy ?? []) deps.set(d.id, d)
-  }
-  return Array.from(deps.values())
-}
-
-type ActiveTab = 'planning' | 'gantt' | 'quarter' | 'storyboard' | 'table'
+type ActiveTab = 'planning' | 'quarter' | 'storyboard' | 'table'
 
 const NAV_ITEMS = [
   { key: 'planning'   as const, label: 'Planejamento', icon: Calendar },
-  { key: 'gantt'      as const, label: 'Gantt',        icon: BarChart2 },
   { key: 'quarter'    as const, label: 'Por Quarter',  icon: Layers },
   { key: 'storyboard' as const, label: 'Storyboard',   icon: LayoutTemplate },
   { key: 'table'      as const, label: 'Tabela',       icon: Table2 },
@@ -96,7 +84,6 @@ export default function ProjectPage() {
 
   const { setProject } = useRoadmapStore()
   const [project, setLocalProject] = useState<Project | null>(null)
-  const [dependencies, setDependencies] = useState<ActivityDependency[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<ActiveTab>('planning')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -109,7 +96,6 @@ export default function ProjectPage() {
       const proj = toProject(data)
       setLocalProject(proj)
       setProject(proj)
-      setDependencies(extractDependencies(data.activities))
     } catch {
       toast.error('Failed to load project')
       router.push('/projects')
@@ -270,7 +256,6 @@ export default function ProjectPage() {
         {/* Main content */}
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
           {activeTab === 'planning'   && <PlanningView project={project} />}
-          {activeTab === 'gantt'      && <RoadmapView project={project} dependencies={dependencies} />}
           {activeTab === 'quarter'    && <QuarterView />}
           {activeTab === 'storyboard' && <StoryboardView projectId={project.id} />}
           {activeTab === 'table'      && <TableView />}

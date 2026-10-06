@@ -6,9 +6,7 @@ const resetStore = () => {
   useRoadmapStore.setState({
     project: null,
     activities: [],
-    timeView: 'month',
     activeTagFilter: null,
-    dragPreview: null,
   })
 }
 
@@ -65,13 +63,6 @@ describe('roadmapStore', () => {
     })
   })
 
-  describe('setTimeView', () => {
-    it('should update time view', () => {
-      useRoadmapStore.getState().setTimeView('quarter')
-      expect(useRoadmapStore.getState().timeView).toBe('quarter')
-    })
-  })
-
   describe('setTagFilter', () => {
     it('should set and clear tag filter', () => {
       useRoadmapStore.getState().setTagFilter('frontend')
@@ -79,19 +70,6 @@ describe('roadmapStore', () => {
 
       useRoadmapStore.getState().setTagFilter(null)
       expect(useRoadmapStore.getState().activeTagFilter).toBeNull()
-    })
-  })
-
-  describe('setDragPreview', () => {
-    it('should set drag preview', () => {
-      const preview = { activityId: 'act-1', previewStartDate: new Date(), previewRowIndex: 0 }
-      useRoadmapStore.getState().setDragPreview(preview)
-      expect(useRoadmapStore.getState().dragPreview).toEqual(preview)
-    })
-
-    it('should clear drag preview', () => {
-      useRoadmapStore.getState().setDragPreview(null)
-      expect(useRoadmapStore.getState().dragPreview).toBeNull()
     })
   })
 
@@ -144,52 +122,6 @@ describe('roadmapStore', () => {
       useRoadmapStore.getState().removeActivity('act-1')
       expect(useRoadmapStore.getState().activities).toHaveLength(1)
       expect(useRoadmapStore.getState().activities[0].id).toBe('act-2')
-    })
-  })
-
-  describe('scheduleActivity', () => {
-    it('should set startDate and rowIndex', () => {
-      useRoadmapStore.getState().addActivity(makeActivity())
-      const date = new Date(2025, 5, 1)
-      useRoadmapStore.getState().scheduleActivity('act-1', date, 2)
-      const act = useRoadmapStore.getState().activities[0]
-      expect(act.startDate).toEqual(date)
-      expect(act.rowIndex).toBe(2)
-    })
-  })
-
-  describe('unscheduleActivity', () => {
-    it('should clear startDate and rowIndex', () => {
-      useRoadmapStore.getState().addActivity(makeActivity({
-        startDate: new Date(),
-        rowIndex: 3,
-      }))
-      useRoadmapStore.getState().unscheduleActivity('act-1')
-      const act = useRoadmapStore.getState().activities[0]
-      expect(act.startDate).toBeNull()
-      expect(act.rowIndex).toBeNull()
-    })
-  })
-
-  describe('getScheduledActivities', () => {
-    it('should return only activities with startDate', () => {
-      useRoadmapStore.getState().addActivity(makeActivity({ id: 'a1', startDate: new Date() }))
-      useRoadmapStore.getState().addActivity(makeActivity({ id: 'a2', startDate: null }))
-      useRoadmapStore.getState().addActivity(makeActivity({ id: 'a3', startDate: new Date() }))
-
-      const scheduled = useRoadmapStore.getState().getScheduledActivities()
-      expect(scheduled).toHaveLength(2)
-    })
-  })
-
-  describe('getUnscheduledActivities', () => {
-    it('should return only activities without startDate', () => {
-      useRoadmapStore.getState().addActivity(makeActivity({ id: 'a1', startDate: new Date() }))
-      useRoadmapStore.getState().addActivity(makeActivity({ id: 'a2', startDate: null }))
-
-      const unscheduled = useRoadmapStore.getState().getUnscheduledActivities()
-      expect(unscheduled).toHaveLength(1)
-      expect(unscheduled[0].id).toBe('a2')
     })
   })
 

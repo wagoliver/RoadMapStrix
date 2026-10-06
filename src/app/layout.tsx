@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
   title: 'RoadMapStrix — Product Roadmap',
-  description: 'Plan and visualize product roadmaps with a Gantt-style interface',
+  description: 'Plan and visualize product roadmaps by quarter',
 }
 
 export default function RootLayout({
